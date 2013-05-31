@@ -26,6 +26,9 @@
 #include <linux/bsearch.h>
 #include <linux/sort.h>
 
+/* sysctl */
+int unprivileged_userns_clone;
+
 static struct kmem_cache *user_ns_cachep __read_mostly;
 static DEFINE_MUTEX(userns_state_mutex);
 
