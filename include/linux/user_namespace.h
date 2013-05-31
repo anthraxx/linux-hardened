@@ -173,6 +173,8 @@ static inline struct user_namespace *to_user_ns(struct ns_common *ns)
 
 #ifdef CONFIG_USER_NS
 
+extern int unprivileged_userns_clone;
+
 static inline struct user_namespace *get_user_ns(struct user_namespace *ns)
 {
 	if (ns)
@@ -205,6 +207,8 @@ extern bool in_userns(const struct user_namespace *ancestor,
 extern bool current_in_userns(const struct user_namespace *target_ns);
 struct ns_common *ns_get_owner(struct ns_common *ns);
 #else
+
+#define unprivileged_userns_clone 0
 
 static inline struct user_namespace *get_user_ns(struct user_namespace *ns)
 {
