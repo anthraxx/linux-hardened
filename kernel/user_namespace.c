@@ -24,6 +24,9 @@
 #include <linux/projid.h>
 #include <linux/fs_struct.h>
 
+/* sysctl */
+int unprivileged_userns_clone;
+
 static struct kmem_cache *user_ns_cachep __read_mostly;
 static DEFINE_MUTEX(userns_state_mutex);
 
