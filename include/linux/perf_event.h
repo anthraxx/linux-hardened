@@ -1792,6 +1792,14 @@ static inline int perf_is_paranoid(void)
 
 extern int perf_allow_kernel(void);
 
+static inline int perf_allow_open(void)
+{
+	if (sysctl_perf_event_paranoid > 2 && !perfmon_capable())
+		return -EACCES;
+
+	return security_perf_event_open(PERF_SECURITY_OPEN);
+}
+
 static inline int perf_allow_cpu(void)
 {
 	if (sysctl_perf_event_paranoid > 0 && !perfmon_capable())
