@@ -869,6 +869,8 @@ with respect to CAP_PERFMON use cases.
 >=1  Disallow CPU event access by users without ``CAP_PERFMON``.
 
 >=2  Disallow kernel profiling by users without ``CAP_PERFMON``.
+
+>=3  Disallow use of any event by users without ``CAP_PERFMON``.
 ===  ==================================================================
 
 
