@@ -734,6 +734,8 @@ users (without CAP_SYS_ADMIN).  The default value is 2.
 >=1  Disallow CPU event access by users without CAP_SYS_ADMIN
 
 >=2  Disallow kernel profiling by users without CAP_SYS_ADMIN
+
+>=3  Disallow use of any event by users without CAP_SYS_ADMIN
 ===  ==================================================================
 
 
