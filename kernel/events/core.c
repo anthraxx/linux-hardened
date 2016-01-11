@@ -492,8 +492,13 @@ static __always_inline bool is_guest_mediated_pmu_loaded(void)
  *   0 - disallow raw tracepoint access for unpriv
  *   1 - disallow cpu events for unpriv
  *   2 - disallow kernel profiling for unpriv
+ *   3 - disallow all unpriv perf event use
  */
+#ifdef CONFIG_SECURITY_PERF_EVENTS_RESTRICT
+int sysctl_perf_event_paranoid __read_mostly = 3;
+#else
 int sysctl_perf_event_paranoid __read_mostly = 2;
+#endif
 
 /* Minimum for 512 kiB + 1 user control page. 'free' kiB per user. */
 static int sysctl_perf_event_mlock __read_mostly = 512 + (PAGE_SIZE / 1024);
@@ -13903,7 +13908,7 @@ SYSCALL_DEFINE5(perf_event_open,
 		return err;
 
 	/* Do we allow access to perf_event_open(2) ? */
-	err = security_perf_event_open(PERF_SECURITY_OPEN);
+	err = perf_allow_open();
 	if (err)
 		return err;
 
@@ -14759,6 +14764,15 @@ const struct perf_event_attr *perf_event_attrs(struct perf_event *event)
 
 	return &event->attr;
 }
+
+int perf_allow_open(void)
+{
+	if (sysctl_perf_event_paranoid > 2 && !perfmon_capable())
+		return -EACCES;
+
+	return security_perf_event_open(PERF_SECURITY_OPEN);
+}
+EXPORT_SYMBOL_GPL(perf_allow_open);
 
 int perf_allow_kernel(void)
 {
