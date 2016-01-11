@@ -1790,6 +1790,7 @@ static inline int perf_is_paranoid(void)
 	return sysctl_perf_event_paranoid > -1;
 }
 
+extern int perf_allow_open(void);
 extern int perf_allow_kernel(void);
 extern int perf_allow_cpu(void);
 extern int perf_allow_tracepoint(void);
@@ -2009,6 +2010,10 @@ perf_event_pause(struct perf_event *event, bool reset)			{ return 0; }
 static inline int
 perf_exclude_event(struct perf_event *event, struct pt_regs *regs)	{ return 0; }
 
+static inline int perf_allow_open(void)
+{
+	return perfmon_capable() ? 0 : -EACCES;
+}
 static inline int perf_allow_kernel(void)
 {
 	return perfmon_capable() ? 0 : -EACCES;
