@@ -5006,6 +5006,11 @@ Kernel parameters
 			the specified number of seconds.  This is to be used if
 			your oopses keep scrolling off the screen.
 
+	extra_latent_entropy
+			Enable a very simple form of latent entropy extraction
+			from the first 4GB of memory as the bootmem allocator
+			passes the memory pages to the buddy allocator.
+
 	pci=option[,option...]	[PCI,EARLY] various PCI subsystem options.
 
 				Some options herein operate on a specific device
