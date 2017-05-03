@@ -6264,6 +6264,9 @@ static noinline void warn_free_bad_obj(struct kmem_cache *s, void *obj)
 
 	cachep = slab->slab_cache;
 
+#ifdef CONFIG_BUG_ON_DATA_CORRUPTION
+	BUG_ON(cachep != s);
+#else
 	if (WARN_ONCE(cachep != s,
 			"kmem_cache_free(%s, %p): object belongs to different cache %s\n",
 			s->name, obj, cachep ? cachep->name : "(NULL)")) {
@@ -6271,6 +6274,7 @@ static noinline void warn_free_bad_obj(struct kmem_cache *s, void *obj)
 			print_tracking(cachep, obj);
 		return;
 	}
+#endif
 }
 
 /**
