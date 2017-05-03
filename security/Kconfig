@@ -8,7 +8,7 @@ source security/keys/Kconfig
 
 config SECURITY_DMESG_RESTRICT
 	bool "Restrict unprivileged access to the kernel syslog"
-	default n
+	default y
 	help
 	  This enforces restrictions on unprivileged users reading the kernel
 	  syslog via dmesg(8).
