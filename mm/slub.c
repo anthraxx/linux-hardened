@@ -44,6 +44,7 @@
 #include <linux/memcontrol.h>
 #include <linux/random.h>
 #include <linux/prandom.h>
+#include <linux/stackprotector.h>
 #include <kunit/test.h>
 #include <kunit/test-bug.h>
 #include <linux/sort.h>
@@ -742,6 +743,8 @@ static inline void set_orig_size(struct kmem_cache *s,
 		return;
 
 	p += get_info_end(s);
+	if (IS_ENABLED(CONFIG_SLAB_CANARY))
+		p = (void *)p + sizeof(void *);
 	p += sizeof(struct track) * 2;
 
 	*(unsigned long *)p = orig_size;
@@ -758,6 +761,8 @@ static inline unsigned long get_orig_size(struct kmem_cache *s, void *object)
 		return s->object_size;
 
 	p += get_info_end(s);
+	if (IS_ENABLED(CONFIG_SLAB_CANARY))
+		p = (void *)p + sizeof(void *);
 	p += sizeof(struct track) * 2;
 
 	return *(unsigned long *)p;
@@ -897,6 +902,33 @@ static inline unsigned int obj_exts_offset_in_object(struct kmem_cache *s)
 }
 #endif
 
+#ifdef CONFIG_SLAB_CANARY
+static inline unsigned long *get_canary(struct kmem_cache *s, void *object)
+{
+	return object + get_info_end(s);
+}
+
+static inline unsigned long get_canary_value(const void *canary, unsigned long value)
+{
+	return (value ^ (unsigned long)canary) & CANARY_MASK;
+}
+
+static inline void set_canary(struct kmem_cache *s, void *object, unsigned long value)
+{
+	unsigned long *canary = get_canary(s, object);
+	*canary = get_canary_value(canary, value);
+}
+
+static inline void check_canary(struct kmem_cache *s, void *object, unsigned long value)
+{
+	unsigned long *canary = get_canary(s, object);
+	BUG_ON(*canary != get_canary_value(canary, value));
+}
+#else
+#define set_canary(s, object, value)
+#define check_canary(s, object, value)
+#endif
+
 #ifdef CONFIG_SLUB_DEBUG
 
 /*
@@ -1025,6 +1057,9 @@ static struct track *get_track(struct kmem_cache *s, void *object,
 	struct track *p;
 
 	p = object + get_info_end(s);
+
+	if (IS_ENABLED(CONFIG_SLAB_CANARY))
+		p = (void *)p + sizeof(void *);
 
 	return kasan_reset_tag(p + alloc);
 }
@@ -1186,6 +1221,9 @@ static void print_trailer(struct kmem_cache *s, struct slab *slab, u8 *p)
 			s->inuse - s->object_size);
 
 	off = get_info_end(s);
+
+	if (IS_ENABLED(CONFIG_SLAB_CANARY))
+		off += sizeof(void *);
 
 	if (s->flags & SLAB_STORE_USER)
 		off += 2 * sizeof(struct track);
@@ -1355,10 +1393,11 @@ skip_bug_print:
  *
  * [Metadata starts at object + s->inuse]
  *   - A. freelist pointer (if freeptr_outside_object)
- *   - B. alloc tracking (SLAB_STORE_USER)
- *   - C. free tracking (SLAB_STORE_USER)
- *   - D. original request size (SLAB_KMALLOC && SLAB_STORE_USER)
- *   - E. KASAN metadata (if enabled)
+ *   - B. Canary for SLAB_CANARY
+ *   - C. alloc tracking (SLAB_STORE_USER)
+ *   - D. free tracking (SLAB_STORE_USER)
+ *   - E. original request size (SLAB_KMALLOC && SLAB_STORE_USER)
+ *   - F. KASAN metadata (if enabled)
  *
  * [Mandatory padding] (if CONFIG_SLUB_DEBUG && SLAB_RED_ZONE)
  *   - One mandatory debug word to guarantee a minimum poisoned gap
@@ -1389,6 +1428,9 @@ skip_bug_print:
 static int check_pad_bytes(struct kmem_cache *s, struct slab *slab, u8 *p)
 {
 	unsigned long off = get_info_end(s);	/* The end of info */
+
+	if (IS_ENABLED(CONFIG_SLAB_CANARY))
+		off += sizeof(void *);
 
 	if (s->flags & SLAB_STORE_USER) {
 		/* We also have user information there */
@@ -2608,10 +2650,18 @@ struct rcu_delayed_free {
  */
 static __always_inline
 bool slab_free_hook(struct kmem_cache *s, void *x, bool init,
-		    bool after_rcu_delay)
+		    bool after_rcu_delay, bool canary)
 {
 	/* Are the object contents still accessible? */
 	bool still_accessible = (s->flags & SLAB_TYPESAFE_BY_RCU) && !after_rcu_delay;
+
+	/*
+	 * Postpone setting the inactive canary until the metadata
+	 * has potentially been cleared at the end of this function.
+	 */
+	if (canary) {
+		check_canary(s, x, s->random_active);
+	}
 
 	kmemleak_free_recursive(x, s->flags);
 	kmsan_slab_free(s, x);
@@ -2678,8 +2728,14 @@ bool slab_free_hook(struct kmem_cache *s, void *x, bool init,
 		if (!kasan_has_integrated_init())
 			memset(kasan_reset_tag(x), 0, orig_size);
 		rsize = (s->flags & SLAB_RED_ZONE) ? s->red_left_pad : 0;
+
+#ifdef CONFIG_SLAB_CANARY
+		memset((char *)kasan_reset_tag(x) + inuse + sizeof(void *), 0,
+		       s->size - inuse - sizeof(void *) - rsize);
+#else
 		memset((char *)kasan_reset_tag(x) + inuse, 0,
 		       s->size - inuse - rsize);
+#endif
 		/*
 		 * Restore orig_size, otherwise kmalloc redzone overwritten
 		 * would be reported
@@ -2689,6 +2745,11 @@ bool slab_free_hook(struct kmem_cache *s, void *x, bool init,
 		if (!IS_ENABLED(CONFIG_SLAB_SANITIZE_VERIFY) && s->ctor)
 			s->ctor(x);
 	}
+
+	if (canary) {
+		set_canary(s, x, s->random_inactive);
+	}
+
 	/* KASAN might put x into memory quarantine, delaying its reuse. */
 	return !kasan_slab_free(s, x, init, still_accessible, false);
 }
@@ -2704,7 +2765,7 @@ bool slab_free_freelist_hook(struct kmem_cache *s, void **head, void **tail,
 	bool init;
 
 	if (is_kfence_address(next)) {
-		slab_free_hook(s, next, false, false);
+		slab_free_hook(s, next, false, false, false);
 		return false;
 	}
 
@@ -2719,7 +2780,7 @@ bool slab_free_freelist_hook(struct kmem_cache *s, void **head, void **tail,
 		next = get_freepointer(s, object);
 
 		/* If object's reuse doesn't have to be delayed */
-		if (likely(slab_free_hook(s, object, init, false))) {
+		if (likely(slab_free_hook(s, object, init, false, true))) {
 			/* Move object to the new freelist */
 			set_freepointer(s, object, *head);
 			*head = object;
@@ -2756,6 +2817,7 @@ bool slab_free_freelist_hook(struct kmem_cache *s, void **head, void **tail,
 static void *setup_object(struct kmem_cache *s, void *object)
 {
 	setup_object_debug(s, object);
+	set_canary(s, object, s->random_inactive);
 	object = kasan_init_slab_obj(s, object);
 	if (unlikely(s->ctor) && !has_sanitize_verify(s)) {
 		kasan_unpoison_new_object(s, object);
@@ -4893,6 +4955,11 @@ static __fastpath_inline void *slab_alloc_node(struct kmem_cache *s, struct list
 		init = slab_want_init_on_alloc(gfpflags, s);
 	}
 
+	if (object) {
+		check_canary(s, object, s->random_inactive);
+		set_canary(s, object, s->random_active);
+	}
+
 out:
 	/*
 	 * When init equals 'true', like for kzalloc() family, only
@@ -6200,10 +6267,16 @@ static __fastpath_inline
 void slab_free(struct kmem_cache *s, struct slab *slab, void *object,
 	       unsigned long addr)
 {
+	bool canary = true;
+
 	memcg_slab_free_hook(s, slab, &object, 1);
 	alloc_tagging_slab_free_hook(s, slab, &object, 1);
 
-	if (unlikely(!slab_free_hook(s, object, slab_want_init_on_free(s), false)))
+	/* Make sure canaries are not used on kfence objects. */
+	if (is_kfence_address(object))
+		canary = false;
+
+	if (unlikely(!slab_free_hook(s, object, slab_want_init_on_free(s), false, canary)))
 		return;
 
 	if (likely(!IS_ENABLED(CONFIG_NUMA) || slab_nid(slab) == numa_mem_id())
@@ -6221,11 +6294,16 @@ void slab_free(struct kmem_cache *s, struct slab *slab, void *object,
 static noinline
 void memcg_alloc_abort_single(struct kmem_cache *s, void *object)
 {
+	bool canary = true;
 	struct slab *slab = virt_to_slab(object);
 
 	alloc_tagging_slab_free_hook(s, slab, &object, 1);
 
-	if (likely(slab_free_hook(s, object, slab_want_init_on_free(s), false)))
+	/* Make sure canaries are not used on kfence objects. */
+	if (is_kfence_address(object))
+		canary = false;
+
+	if (likely(slab_free_hook(s, object, slab_want_init_on_free(s), false, canary)))
 		__slab_free(s, slab, object, object, 1, _RET_IP_);
 }
 #endif
@@ -6268,7 +6346,7 @@ static void slab_free_after_rcu_debug(struct rcu_head *rcu_head)
 		return;
 
 	/* resume freeing */
-	if (slab_free_hook(s, object, slab_want_init_on_free(s), true)) {
+	if (slab_free_hook(s, object, slab_want_init_on_free(s), true, true)) {
 		__slab_free(s, slab, object, object, 1, _THIS_IP_);
 		stat(s, FREE_SLOWPATH);
 	}
@@ -6364,7 +6442,7 @@ static inline size_t slab_ksize(struct slab *slab)
 	 * or any other metadata back there then we can
 	 * only use the space before that information.
 	 */
-	if (s->flags & (SLAB_TYPESAFE_BY_RCU | SLAB_STORE_USER))
+	if ((s->flags & (SLAB_TYPESAFE_BY_RCU | SLAB_STORE_USER)) || IS_ENABLED(CONFIG_SLAB_CANARY))
 		return s->inuse;
 	else if (obj_exts_in_object(s, slab))
 		return s->inuse;
@@ -7245,7 +7323,7 @@ static inline
 int __kmem_cache_alloc_bulk(struct kmem_cache *s, gfp_t flags, size_t size,
 			    void **p)
 {
-	int i;
+	int i, k;
 
 	if (IS_ENABLED(CONFIG_SLUB_TINY) || kmem_cache_debug(s)) {
 		for (i = 0; i < size; i++) {
@@ -7276,6 +7354,13 @@ int __kmem_cache_alloc_bulk(struct kmem_cache *s, gfp_t flags, size_t size,
 			if (s->ctor)
 				s->ctor(p[j]);
 			kasan_poison_new_object(s, p[j]);
+		}
+	}
+
+	for (k = 0; k < i; k++) {
+		if (!is_kfence_address(p[k])) {
+			check_canary(s, p[k], s->random_inactive);
+			set_canary(s, p[k], s->random_active);
 		}
 	}
 
@@ -7599,6 +7684,7 @@ static void early_kmem_cache_node_alloc(int node)
 #ifdef CONFIG_SLUB_DEBUG
 	init_object(kmem_cache_node, n, SLUB_RED_ACTIVE);
 #endif
+	set_canary(kmem_cache_node, n, kmem_cache_node->random_active);
 	n = kasan_slab_alloc(kmem_cache_node, n, GFP_KERNEL, false);
 	slab->freelist = get_freepointer(kmem_cache_node, n);
 	slab->inuse = 1;
@@ -7802,6 +7888,9 @@ static int calculate_sizes(struct kmem_cache_args *args, struct kmem_cache *s)
 		 */
 		s->offset = ALIGN_DOWN(s->object_size / 2, sizeof(void *));
 	}
+
+	if (IS_ENABLED(CONFIG_SLAB_CANARY))
+		size += sizeof(void *);
 
 #ifdef CONFIG_SLUB_DEBUG
 	if (flags & SLAB_STORE_USER) {
@@ -8138,6 +8227,10 @@ void __check_heap_object(const void *ptr, unsigned long n,
 			usercopy_abort("SLUB object in left red zone",
 				       s->name, to_user, offset, n);
 		offset -= s->red_left_pad;
+	}
+
+	if (!is_kfence) {
+		check_canary(s, (void *)ptr - offset, s->random_active);
 	}
 
 	/* Allow address range falling entirely within usercopy region. */
@@ -8506,6 +8599,10 @@ int do_kmem_cache_create(struct kmem_cache *s, const char *name,
 	s->flags = kmem_cache_flags(flags, s->name);
 #ifdef CONFIG_SLAB_FREELIST_HARDENED
 	s->random = get_random_long();
+#endif
+#ifdef CONFIG_SLAB_CANARY
+	s->random_active = get_random_long();
+	s->random_inactive = get_random_long();
 #endif
 	s->align = args->align;
 	s->ctor = args->ctor;
