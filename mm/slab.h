@@ -371,6 +371,9 @@ static inline struct kmem_cache *cache_from_obj(struct kmem_cache *s, void *x)
 		return s;
 
 	page = virt_to_head_page(x);
+#ifdef CONFIG_BUG_ON_DATA_CORRUPTION
+	BUG_ON(!PageSlab(page));
+#endif
 	cachep = page->slab_cache;
 	if (slab_equal_or_root(cachep, s))
 		return cachep;
