@@ -1397,7 +1397,7 @@ char *pointer_string(char *buf, char *end, const void *ptr,
 	return number(buf, end, (unsigned long int)ptr, spec);
 }
 
-int kptr_restrict __read_mostly;
+int kptr_restrict __read_mostly = 2;
 
 static noinline_for_stack
 char *restricted_pointer(char *buf, char *end, const void *ptr,
