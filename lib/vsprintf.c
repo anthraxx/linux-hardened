@@ -849,7 +849,7 @@ static char *default_pointer(char *buf, char *end, const void *ptr,
 	return ptr_to_id(buf, end, ptr, spec);
 }
 
-int kptr_restrict __read_mostly;
+int kptr_restrict __read_mostly = 2;
 EXPORT_SYMBOL_FOR_MODULES(kptr_restrict, "printf_kunit");
 
 static noinline_for_stack
