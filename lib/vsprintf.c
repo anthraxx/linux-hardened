@@ -806,7 +806,7 @@ static char *ptr_to_id(char *buf, char *end, const void *ptr,
 	return pointer_string(buf, end, (const void *)hashval, spec);
 }
 
-int kptr_restrict __read_mostly;
+int kptr_restrict __read_mostly = 2;
 
 static noinline_for_stack
 char *restricted_pointer(char *buf, char *end, const void *ptr,
