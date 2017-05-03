@@ -284,6 +284,11 @@ struct kmem_cache {
 	unsigned long random;
 #endif
 
+#ifdef CONFIG_SLAB_CANARY
+	unsigned long random_active;
+	unsigned long random_inactive;
+#endif
+
 #ifdef CONFIG_NUMA
 	/*
 	 * Defragmentation by allocating from a remote node.
@@ -599,7 +604,7 @@ static inline size_t slab_ksize(const struct kmem_cache *s)
 	 * back there or track user information then we can
 	 * only use the space before that information.
 	 */
-	if (s->flags & (SLAB_TYPESAFE_BY_RCU | SLAB_STORE_USER))
+	if ((s->flags & (SLAB_TYPESAFE_BY_RCU | SLAB_STORE_USER)) || IS_ENABLED(CONFIG_SLAB_CANARY))
 		return s->inuse;
 	/*
 	 * Else we can use all the padding etc for the allocation
