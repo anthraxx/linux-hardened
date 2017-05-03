@@ -949,6 +949,7 @@ endmenu # "Debug lockups and hangs"
 
 config PANIC_ON_OOPS
 	bool "Panic on Oops"
+	default y
 	help
 	  Say Y here to enable the kernel to panic when it oopses. This
 	  has the same effect as setting oops=panic on the kernel command
@@ -958,7 +959,7 @@ config PANIC_ON_OOPS
 	  anything erroneous after an oops which could result in data
 	  corruption or other issues.
 
-	  Say N if unsure.
+	  Say Y if unsure.
 
 config PANIC_ON_OOPS_VALUE
 	int
