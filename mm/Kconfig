@@ -313,6 +313,23 @@ config SLAB_FREELIST_HARDENED
 	  sanity-checking than others. This option is most effective with
 	  CONFIG_SLUB.
 
+config SLAB_CANARY
+	depends on SLUB
+	depends on !SLAB_MERGE_DEFAULT
+	bool "SLAB canaries"
+	default y
+	help
+	  Place canaries at the end of kernel slab allocations, sacrificing
+	  some performance and memory usage for security.
+
+	  Canaries can detect some forms of heap corruption when allocations
+	  are freed and as part of the HARDENED_USERCOPY feature. It provides
+	  basic use-after-free detection for HARDENED_USERCOPY.
+
+	  Canaries absorb small overflows (rendering them harmless), mitigate
+	  non-NUL terminated C string overflows on 64-bit via a guaranteed zero
+	  byte and provide basic double-free detection.
+
 config SLUB_STATS
 	default n
 	bool "Enable SLUB performance statistics"
