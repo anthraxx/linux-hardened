@@ -370,7 +370,8 @@ static inline struct kmem_cache *cache_from_obj(struct kmem_cache *s, void *x)
 	 * to not do even the assignment. In that case, slab_equal_or_root
 	 * will also be a constant.
 	 */
-	if (!memcg_kmem_enabled() &&
+	if (!IS_ENABLED(CONFIG_SLAB_HARDENED) &&
+	    !memcg_kmem_enabled() &&
 	    !unlikely(s->flags & SLAB_CONSISTENCY_CHECKS))
 		return s;
 
