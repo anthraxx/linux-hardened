@@ -1214,7 +1214,7 @@ config VM86
 	default X86_LEGACY_VM86
 
 config X86_16BIT
-	bool "Enable support for 16-bit segments" if EXPERT
+	bool "Enable support for 16-bit segments"
 	default y
 	depends on MODIFY_LDT_SYSCALL
 	help
