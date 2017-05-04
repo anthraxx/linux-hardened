@@ -279,6 +279,14 @@ config PAGE_SANITIZE_VERIFY
 	  When init_on_free is enabled, verify that newly allocated pages
 	  are zeroed to detect write-after-free bugs.
 
+config SLAB_SANITIZE_VERIFY
+	bool "Verify sanitized SLAB allocations"
+	default y
+	depends on !KASAN
+	help
+	  When init_on_free is enabled, verify that newly allocated slab
+	  objects are zeroed to detect write-after-free bugs.
+
 endmenu
 
 config CC_HAS_RANDSTRUCT
