@@ -1724,6 +1724,14 @@ config SLAB_SANITIZE
 
 	  For slabs with debug poisoning enabling, this has no impact.
 
+config SLAB_SANITIZE_VERIFY
+	depends on SLAB_SANITIZE && PAGE_SANITIZE
+	default y
+	bool "Verify sanitized SLAB allocations"
+	help
+	  Verify that newly allocated slab allocations are zeroed to detect
+	  write-after-free bugs.
+
 config SLUB_CPU_PARTIAL
 	default y
 	depends on SLUB && SMP
