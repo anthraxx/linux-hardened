@@ -245,6 +245,12 @@ static inline bool kmem_cache_debug(struct kmem_cache *s)
 	return kmem_cache_debug_flags(s, SLAB_DEBUG_FLAGS);
 }
 
+static inline bool has_sanitize_verify(struct kmem_cache *s)
+{
+	return IS_ENABLED(CONFIG_SLAB_SANITIZE_VERIFY) &&
+	       slab_want_init_on_free(s);
+}
+
 void *fixup_red_left(struct kmem_cache *s, void *p)
 {
 	if (kmem_cache_debug_flags(s, SLAB_RED_ZONE))
@@ -2672,7 +2678,7 @@ bool slab_free_hook(struct kmem_cache *s, void *x, bool init,
 		 */
 		set_orig_size(s, x, orig_size);
 
-		if (s->ctor)
+		if (!IS_ENABLED(CONFIG_SLAB_SANITIZE_VERIFY) && s->ctor)
 			s->ctor(x);
 	}
 	/* KASAN might put x into memory quarantine, delaying its reuse. */
@@ -2743,7 +2749,7 @@ static inline void *setup_object(struct kmem_cache *s, void *object)
 {
 	setup_object_debug(s, object);
 	object = kasan_init_slab_obj(s, object);
-	if (unlikely(s->ctor)) {
+	if (unlikely(s->ctor) && !has_sanitize_verify(s)) {
 		kasan_unpoison_new_object(s, object);
 		s->ctor(object);
 		kasan_poison_new_object(s, object);
@@ -4564,7 +4570,7 @@ static __fastpath_inline
 bool slab_post_alloc_hook(struct kmem_cache *s, gfp_t flags, size_t size,
 			  void **p, const struct slab_alloc_context *ac)
 {
-	bool init = slab_want_init_on_alloc(flags, s);
+	bool init = slab_want_init_on_alloc(flags, s) && !has_sanitize_verify(s);
 	unsigned int zero_size = s->object_size;
 	gfp_t init_flags = flags & gfp_allowed_mask;
 	bool kasan_init = false;
@@ -4926,6 +4932,17 @@ static __fastpath_inline void *slab_alloc_node(struct kmem_cache *s,
 		object = __slab_alloc_node(s, gfpflags, node, ac);
 
 	maybe_wipe_obj_freeptr(s, object);
+
+	if (has_sanitize_verify(s) && object) {
+		/* KASAN hasn't unpoisoned the object yet (this is done in the
+		 * post-alloc hook), so let's do it temporarily.
+		 */
+		kasan_unpoison_new_object(s, object);
+		BUG_ON(memchr_inv(object, 0, s->object_size));
+		if (s->ctor)
+			s->ctor(object);
+		kasan_poison_new_object(s, object);
+	}
 
 out:
 	/*
@@ -7373,6 +7390,21 @@ static bool __kmem_cache_alloc_bulk(struct kmem_cache *s, gfp_t flags,
 		if (i < size)
 			goto error;
 		stat_add(s, ALLOC_SLOWPATH, i);
+	}
+
+	if (has_sanitize_verify(s)) {
+		int j;
+
+		for (j = 0; j < i; j++) {
+			/* KASAN hasn't unpoisoned the object yet (this is done in the
+			 * post-alloc hook), so let's do it temporarily.
+			 */
+			kasan_unpoison_new_object(s, p[j]);
+			BUG_ON(memchr_inv(p[j], 0, s->object_size));
+			if (s->ctor)
+				s->ctor(p[j]);
+			kasan_poison_new_object(s, p[j]);
+		}
 	}
 
 	return true;
