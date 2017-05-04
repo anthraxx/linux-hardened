@@ -1499,6 +1499,12 @@ inline void post_alloc_hook(struct page *page, unsigned int order,
 	 */
 	kernel_unpoison_pages(page, 1 << order);
 
+	if (IS_ENABLED(CONFIG_PAGE_SANITIZE_VERIFY) && want_init_on_free()) {
+		int i;
+		for (i = 0; i < (1 << order); i++)
+			verify_zero_highpage(page + i);
+	}
+
 	/*
 	 * As memory initialization might be integrated into KASAN,
 	 * KASAN unpoisoning and memory initializion code must be
