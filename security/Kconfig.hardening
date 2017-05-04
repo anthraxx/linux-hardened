@@ -240,6 +240,13 @@ config INIT_ON_FREE_DEFAULT_ON
 	  touching "cold" memory areas. Most cases see 3-5% impact. Some
 	  synthetic workloads have measured as high as 8%.
 
+config PAGE_SANITIZE_VERIFY
+	bool "Verify sanitized pages"
+	default y
+	help
+	  When init_on_free is enabled, verify that newly allocated pages
+	  are zeroed to detect write-after-free bugs.
+
 endmenu
 
 endmenu
