@@ -2353,7 +2353,6 @@ config CMDLINE_OVERRIDE
 
 config MODIFY_LDT_SYSCALL
 	bool "Enable the LDT (local descriptor table)"
-	default y
 	help
 	  Linux can allow user programs to install a per-process x86
 	  Local Descriptor Table (LDT) using the modify_ldt(2) system
