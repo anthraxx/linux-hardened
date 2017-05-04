@@ -1215,7 +1215,6 @@ config VM86
 
 config X86_16BIT
 	bool "Enable support for 16-bit segments"
-	default y
 	depends on MODIFY_LDT_SYSCALL
 	help
 	  This option is required by programs like Wine to run 16-bit
