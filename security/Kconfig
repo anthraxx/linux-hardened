@@ -31,7 +31,7 @@ config SECURITY_PERF_EVENTS_RESTRICT
 
 config SECURITY_TIOCSTI_RESTRICT
 	bool "Restrict unprivileged use of tiocsti command injection"
-	default n
+	default y
 	help
 	  This enforces restrictions on unprivileged users injecting commands
 	  into other processes which share a tty session using the TIOCSTI
