@@ -220,6 +220,12 @@ static inline bool slub_debug_orig_size(struct kmem_cache *s)
 			(s->flags & SLAB_KMALLOC));
 }
 
+static inline bool has_sanitize_verify(struct kmem_cache *s)
+{
+	return IS_ENABLED(CONFIG_SLAB_SANITIZE_VERIFY) &&
+	       slab_want_init_on_free(s);
+}
+
 void *fixup_red_left(struct kmem_cache *s, void *p)
 {
 	if (kmem_cache_debug_flags(s, SLAB_RED_ZONE))
@@ -1795,7 +1801,7 @@ static __always_inline bool slab_free_hook(struct kmem_cache *s,
 		rsize = (s->flags & SLAB_RED_ZONE) ? s->red_left_pad : 0;
 		memset((char *)kasan_reset_tag(x) + s->inuse, 0,
 		       s->size - s->inuse - rsize);
-		if (s->ctor)
+		if (!IS_ENABLED(CONFIG_SLAB_SANITIZE_VERIFY) && s->ctor)
 			s->ctor(x);
 	}
 	/* KASAN might put x into memory quarantine, delaying its reuse. */
@@ -1866,7 +1872,7 @@ static void *setup_object(struct kmem_cache *s, void *object)
 {
 	setup_object_debug(s, object);
 	object = kasan_init_slab_obj(s, object);
-	if (unlikely(s->ctor)) {
+	if (unlikely(s->ctor) && !has_sanitize_verify(s)) {
 		kasan_unpoison_object_data(s, object);
 		s->ctor(object);
 		kasan_poison_object_data(s, object);
@@ -3486,7 +3492,19 @@ static __fastpath_inline void *slab_alloc_node(struct kmem_cache *s, struct list
 	object = __slab_alloc_node(s, gfpflags, node, addr, orig_size);
 
 	maybe_wipe_obj_freeptr(s, object);
-	init = slab_want_init_on_alloc(gfpflags, s);
+
+	if (has_sanitize_verify(s) && object) {
+		/* KASAN hasn't unpoisoned the object yet (this is done in the
+		 * post-alloc hook), so let's do it temporarily.
+		 */
+		kasan_unpoison_object_data(s, object);
+		BUG_ON(memchr_inv(object, 0, s->object_size));
+		if (s->ctor)
+			s->ctor(object);
+		kasan_poison_object_data(s, object);
+	} else {
+		init = slab_want_init_on_alloc(gfpflags, s);
+	}
 
 out:
 	/*
@@ -4009,6 +4027,21 @@ static inline int __kmem_cache_alloc_bulk(struct kmem_cache *s, gfp_t flags,
 	local_unlock_irqrestore(&s->cpu_slab->lock, irqflags);
 	slub_put_cpu_ptr(s->cpu_slab);
 
+	if (has_sanitize_verify(s)) {
+		int j;
+
+		for (j = 0; j < i; j++) {
+			/* KASAN hasn't unpoisoned the object yet (this is done in the
+			 * post-alloc hook), so let's do it temporarily.
+			 */
+			kasan_unpoison_object_data(s, p[j]);
+			BUG_ON(memchr_inv(p[j], 0, s->object_size));
+			if (s->ctor)
+				s->ctor(p[j]);
+			kasan_poison_object_data(s, p[j]);
+		}
+	}
+
 	return i;
 
 error:
@@ -4055,6 +4088,7 @@ int kmem_cache_alloc_bulk(struct kmem_cache *s, gfp_t flags, size_t size,
 {
 	int i;
 	struct obj_cgroup *objcg = NULL;
+	bool init = false;
 
 	if (!size)
 		return 0;
@@ -4070,9 +4104,13 @@ int kmem_cache_alloc_bulk(struct kmem_cache *s, gfp_t flags, size_t size,
 	 * memcg and kmem_cache debug support and memory initialization.
 	 * Done outside of the IRQ disabled fastpath loop.
 	 */
-	if (i != 0)
+	if (i != 0) {
+		if (!has_sanitize_verify(s)) {
+			init = slab_want_init_on_alloc(flags, s);
+		}
 		slab_post_alloc_hook(s, objcg, flags, size, p,
-			slab_want_init_on_alloc(flags, s), s->object_size);
+			init, s->object_size);
+	}
 	return i;
 }
 EXPORT_SYMBOL(kmem_cache_alloc_bulk);
