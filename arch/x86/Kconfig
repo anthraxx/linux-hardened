@@ -2389,7 +2389,7 @@ config CMDLINE_OVERRIDE
 	  be set to 'N' under normal conditions.
 
 config MODIFY_LDT_SYSCALL
-	bool "Enable the LDT (local descriptor table)" if EXPERT
+	bool "Enable the LDT (local descriptor table)"
 	default y
 	help
 	  Linux can allow user programs to install a per-process x86
