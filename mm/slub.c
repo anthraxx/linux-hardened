@@ -131,6 +131,11 @@ static inline bool has_sanitize(struct kmem_cache *s)
 	return IS_ENABLED(CONFIG_SLAB_SANITIZE) && !(s->flags & (SLAB_TYPESAFE_BY_RCU | SLAB_POISON));
 }
 
+static inline bool has_sanitize_verify(struct kmem_cache *s)
+{
+	return IS_ENABLED(CONFIG_SLAB_SANITIZE_VERIFY) && has_sanitize(s);
+}
+
 void *fixup_red_left(struct kmem_cache *s, void *p)
 {
 	if (kmem_cache_debug(s) && s->flags & SLAB_RED_ZONE)
@@ -1441,7 +1446,7 @@ static void setup_object(struct kmem_cache *s, struct page *page,
 {
 	setup_object_debug(s, page, object);
 	kasan_init_slab_obj(s, object);
-	if (unlikely(s->ctor)) {
+	if (unlikely(s->ctor) && !has_sanitize_verify(s)) {
 		kasan_unpoison_object_data(s, object);
 		s->ctor(object);
 		kasan_poison_object_data(s, object);
@@ -2757,7 +2762,14 @@ redo:
 		stat(s, ALLOC_FASTPATH);
 	}
 
-	if (unlikely(gfpflags & __GFP_ZERO) && object)
+	if (has_sanitize_verify(s) && object) {
+		size_t offset = s->offset ? 0 : sizeof(void *);
+		BUG_ON(memchr_inv(object + offset, 0, s->object_size - offset));
+		if (s->ctor)
+			s->ctor(object);
+		if (unlikely(gfpflags & __GFP_ZERO) && offset)
+			memset(object, 0, sizeof(void *));
+	} else if (unlikely(gfpflags & __GFP_ZERO) && object)
 		memset(object, 0, s->object_size);
 
 	slab_post_alloc_hook(s, gfpflags, 1, &object);
@@ -2973,7 +2985,7 @@ static __always_inline void do_slab_free(struct kmem_cache *s,
 
 		while (1) {
 			memset(x + offset, 0, s->object_size - offset);
-			if (s->ctor)
+			if (!IS_ENABLED(CONFIG_SLAB_SANITIZE_VERIFY) && s->ctor)
 				s->ctor(x);
 			if (x == tail_obj)
 				break;
@@ -3207,7 +3219,18 @@ int kmem_cache_alloc_bulk(struct kmem_cache *s, gfp_t flags, size_t size,
 	local_irq_enable();
 
 	/* Clear memory outside IRQ disabled fastpath loop */
-	if (unlikely(flags & __GFP_ZERO)) {
+	if (has_sanitize_verify(s)) {
+		int j;
+
+		for (j = 0; j < i; j++) {
+			size_t offset = s->offset ? 0 : sizeof(void *);
+			BUG_ON(memchr_inv(p[j] + offset, 0, s->object_size - offset));
+			if (s->ctor)
+				s->ctor(p[j]);
+			if (unlikely(flags & __GFP_ZERO) && offset)
+				memset(p[j], 0, sizeof(void *));
+		}
+	} else if (unlikely(flags & __GFP_ZERO)) {
 		int j;
 
 		for (j = 0; j < i; j++)
