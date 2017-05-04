@@ -356,6 +356,13 @@ static inline bool tag_clear_highpages(struct page *page, int numpages,
 
 #endif
 
+static inline void verify_zero_highpage(struct page *page)
+{
+	void *kaddr = kmap_atomic(page);
+	BUG_ON(memchr_inv(kaddr, 0, PAGE_SIZE));
+	kunmap_atomic(kaddr);
+}
+
 /*
  * If we pass in a base or tail page, we can zero up to PAGE_SIZE.
  * If we pass in a head page, we can zero up to the size of the compound page.
