@@ -110,7 +110,7 @@
 
 /* Constants used for minimum and  maximum */
 #ifdef CONFIG_LOCKUP_DETECTOR
-static int sixty = 60;
+static int sixty __read_only = 60;
 #endif
 
 #ifdef CONFIG_PRINTK
@@ -127,7 +127,7 @@ static const unsigned long dirty_bytes_min = 2 * PAGE_SIZE;
 static const int maxolduid = 65535;
 static const int minolduid;
 
-static int ngroups_max = NGROUPS_MAX;
+static int ngroups_max __read_only = NGROUPS_MAX;
 static const int cap_last_cap = CAP_LAST_CAP;
 
 #ifdef CONFIG_INOTIFY_USER
