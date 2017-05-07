@@ -1882,7 +1882,6 @@ config SLUB_DEBUG
 
 config COMPAT_BRK
 	bool "Disable heap randomization"
-	default y
 	help
 	  Randomizing heap placement makes heap exploits harder, but it
 	  also breaks ancient binaries (including anything libc5 based).
