@@ -60,6 +60,8 @@
 #define __ro_after_init __section(".data..ro_after_init")
 #endif
 
+#define __read_only __ro_after_init
+
 #ifndef ____cacheline_aligned_in_smp
 #ifdef CONFIG_SMP
 #define ____cacheline_aligned_in_smp ____cacheline_aligned
