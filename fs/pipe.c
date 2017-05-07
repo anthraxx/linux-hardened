@@ -53,7 +53,7 @@ unsigned int pipe_max_size = 1048576;
 /*
  * Minimum pipe size, as required by POSIX
  */
-unsigned int pipe_min_size = PAGE_SIZE;
+unsigned int pipe_min_size __read_only = PAGE_SIZE;
 
 /* Maximum allocatable pages per user. Hard limit is unset by default, soft
  * matches default values.
