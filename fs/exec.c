@@ -65,6 +65,7 @@
 #include <linux/io_uring.h>
 #include <linux/syscall_user_dispatch.h>
 #include <linux/coredump.h>
+#include <linux/random.h>
 
 #include <linux/uaccess.h>
 #include <asm/mmu_context.h>
@@ -280,6 +281,8 @@ static int __bprm_mm_init(struct linux_binprm *bprm)
 	mm->stack_vm = mm->total_vm = 1;
 	mmap_write_unlock(mm);
 	bprm->p = vma->vm_end - sizeof(void *);
+	if (!(current->personality & ADDR_NO_RANDOMIZE) && randomize_va_space)
+		bprm->p ^= get_random_int() & ~PAGE_MASK;
 	return 0;
 err:
 	mmap_write_unlock(mm);
