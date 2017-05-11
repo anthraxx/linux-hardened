@@ -7,6 +7,7 @@
 
 #include "vma_internal.h"
 #include "vma.h"
+#include <linux/random.h>
 
 /*
  * Relocate a VMA downwards by shift bytes. There cannot be any VMAs between
@@ -148,6 +149,8 @@ int create_init_stack_vma(struct mm_struct *mm, struct vm_area_struct **vmap,
 	mmap_write_unlock(mm);
 	*vmap = vma;
 	*top_mem_p = vma->vm_end - sizeof(void *);
+	if (!(current->personality & ADDR_NO_RANDOMIZE) && randomize_va_space)
+		*top_mem_p ^= get_random_u32() & ~PAGE_MASK;
 	return 0;
 
 err:
