@@ -865,7 +865,7 @@ int arch_remove_memory(u64 start, u64 size)
 #endif
 #endif
 
-int kernel_set_to_readonly __read_mostly;
+int kernel_set_to_readonly __ro_after_init;
 
 void set_kernel_text_rw(void)
 {
@@ -917,11 +917,10 @@ void mark_rodata_ro(void)
 	unsigned long start = PFN_ALIGN(_text);
 	unsigned long size = PFN_ALIGN(_etext) - start;
 
+	kernel_set_to_readonly = 1;
 	set_pages_ro(virt_to_page(start), size >> PAGE_SHIFT);
 	printk(KERN_INFO "Write protecting the kernel text: %luk\n",
 		size >> 10);
-
-	kernel_set_to_readonly = 1;
 
 #ifdef CONFIG_CPA_DEBUG
 	printk(KERN_INFO "Testing CPA: Reverting %lx-%lx\n",
