@@ -1322,7 +1322,7 @@ int __init deferred_page_init_max_threads(const struct cpumask *node_cpumask)
 }
 #endif
 
-int kernel_set_to_readonly;
+int kernel_set_to_readonly __ro_after_init;
 
 void mark_rodata_ro(void)
 {
@@ -1335,9 +1335,8 @@ void mark_rodata_ro(void)
 
 	printk(KERN_INFO "Write protecting the kernel read-only data: %luk\n",
 	       (end - start) >> 10);
-	set_memory_ro(start, (end - start) >> PAGE_SHIFT);
-
 	kernel_set_to_readonly = 1;
+	set_memory_ro(start, (end - start) >> PAGE_SHIFT);
 
 	/*
 	 * The rodata/data/bss/brk section (but not the kernel text!)
