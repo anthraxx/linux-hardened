@@ -88,7 +88,7 @@ static int va1j5jf8007t_read_snr(struct dvb_frontend *fe, u16 *snr)
 	return 0;
 }
 
-static int va1j5jf8007t_get_frontend_algo(struct dvb_frontend *fe)
+static enum dvbfe_algo va1j5jf8007t_get_frontend_algo(struct dvb_frontend *fe)
 {
 	return DVBFE_ALGO_HW;
 }
