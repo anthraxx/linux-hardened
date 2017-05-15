@@ -1501,7 +1501,7 @@ config VM_EVENT_COUNTERS
 
 config SLUB_DEBUG
 	default y
-	bool "Enable SLUB debugging support" if EXPERT
+	bool "Enable SLUB debugging support"
 	depends on SLUB && SYSFS
 	help
 	  SLUB has extensive debug support features. Disabling these can
