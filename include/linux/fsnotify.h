@@ -102,6 +102,9 @@ static inline int fsnotify_file(struct file *file, __u32 mask)
 	if (file->f_mode & (FMODE_NONOTIFY | FMODE_PATH))
 		return 0;
 
+	if (mask & (FS_ACCESS | FS_MODIFY) && is_sidechannel_device(file_inode(file)))
+		return 0;
+
 	return fsnotify_parent(path->dentry, mask, path, FSNOTIFY_EVENT_PATH);
 }
 
