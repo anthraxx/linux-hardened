@@ -295,6 +295,7 @@ static inline void cr4_set_bits_irqsoff(unsigned long mask)
 	unsigned long cr4;
 
 	cr4 = this_cpu_read(cpu_tlbstate.cr4);
+	BUG_ON(cr4 != __read_cr4());
 	if ((cr4 | mask) != cr4)
 		__cr4_set(cr4 | mask);
 }
@@ -305,6 +306,7 @@ static inline void cr4_clear_bits_irqsoff(unsigned long mask)
 	unsigned long cr4;
 
 	cr4 = this_cpu_read(cpu_tlbstate.cr4);
+	BUG_ON(cr4 != __read_cr4());
 	if ((cr4 & ~mask) != cr4)
 		__cr4_set(cr4 & ~mask);
 }
@@ -334,6 +336,7 @@ static inline void cr4_toggle_bits_irqsoff(unsigned long mask)
 	unsigned long cr4;
 
 	cr4 = this_cpu_read(cpu_tlbstate.cr4);
+	BUG_ON(cr4 != __read_cr4());
 	__cr4_set(cr4 ^ mask);
 }
 
@@ -440,6 +443,7 @@ static inline void __native_flush_tlb_global(void)
 	raw_local_irq_save(flags);
 
 	cr4 = this_cpu_read(cpu_tlbstate.cr4);
+	BUG_ON(cr4 != __read_cr4());
 	/* toggle PGE */
 	native_write_cr4(cr4 ^ X86_CR4_PGE);
 	/* write old PGE again and flush TLBs */
