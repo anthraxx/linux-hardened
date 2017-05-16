@@ -8,6 +8,9 @@
 #define USB_MAJOR			180
 #define USB_DEVICE_MAJOR		189
 
+/* sysctl */
+extern int deny_new_usb;
+
 
 #ifdef __KERNEL__
 
