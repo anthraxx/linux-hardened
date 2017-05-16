@@ -361,6 +361,7 @@ static inline bool huge_pmd_needs_flush(pmd_t oldpmd, pmd_t newpmd)
 
 static inline void __native_tlb_flush_global(unsigned long cr4)
 {
+	BUG_ON(cr4 != __read_cr4());
 	native_write_cr4(cr4 ^ X86_CR4_PGE);
 	native_write_cr4(cr4);
 }
