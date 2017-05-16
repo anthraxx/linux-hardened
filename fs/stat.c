@@ -52,8 +52,13 @@ void generic_fillattr(struct user_namespace *mnt_userns, struct inode *inode,
 	stat->gid = i_gid_into_mnt(mnt_userns, inode);
 	stat->rdev = inode->i_rdev;
 	stat->size = i_size_read(inode);
-	stat->atime = inode->i_atime;
-	stat->mtime = inode->i_mtime;
+	if (is_sidechannel_device(inode) && !capable_noaudit(CAP_MKNOD)) {
+		stat->atime = inode->i_ctime;
+		stat->mtime = inode->i_ctime;
+	} else {
+		stat->atime = inode->i_atime;
+		stat->mtime = inode->i_mtime;
+	}
 	stat->ctime = inode->i_ctime;
 	stat->blksize = i_blocksize(inode);
 	stat->blocks = inode->i_blocks;
@@ -120,9 +125,14 @@ int vfs_getattr_nosec(const struct path *path, struct kstat *stat,
 				  STATX_ATTR_DAX);
 
 	mnt_userns = mnt_user_ns(path->mnt);
-	if (inode->i_op->getattr)
-		return inode->i_op->getattr(mnt_userns, path, stat,
-					    request_mask, query_flags);
+	if (inode->i_op->getattr) {
+		int retval = inode->i_op->getattr(mnt_userns, path, stat, request_mask, query_flags);
+		if (!retval && is_sidechannel_device(inode) && !capable_noaudit(CAP_MKNOD)) {
+			stat->atime = stat->ctime;
+			stat->mtime = stat->ctime;
+		}
+		return retval;
+	}
 
 	generic_fillattr(mnt_userns, inode, stat);
 	return 0;
