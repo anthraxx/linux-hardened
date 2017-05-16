@@ -2074,6 +2074,9 @@ extern void usb_led_activity(enum usb_led_event ev);
 static inline void usb_led_activity(enum usb_led_event ev) {}
 #endif
 
+/* sysctl */
+extern int deny_new_usb;
+
 #endif  /* __KERNEL__ */
 
 #endif
