@@ -3474,4 +3474,15 @@ extern void inode_nohighmem(struct inode *inode);
 extern int vfs_fadvise(struct file *file, loff_t offset, loff_t len,
 		       int advice);
 
+extern int device_sidechannel_restrict;
+
+static inline bool is_sidechannel_device(const struct inode *inode)
+{
+	umode_t mode;
+	if (!device_sidechannel_restrict)
+		return false;
+	mode = inode->i_mode;
+	return ((S_ISCHR(mode) || S_ISBLK(mode)) && (mode & (S_IROTH | S_IWOTH)));
+}
+
 #endif /* _LINUX_FS_H */
