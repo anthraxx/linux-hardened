@@ -160,6 +160,9 @@ static const int cap_last_cap = CAP_LAST_CAP;
 static unsigned long hung_task_timeout_max __read_only = (LONG_MAX/HZ);
 #endif
 
+int device_sidechannel_restrict __read_mostly = 1;
+EXPORT_SYMBOL(device_sidechannel_restrict);
+
 #ifdef CONFIG_INOTIFY_USER
 #include <linux/inotify.h>
 #endif
@@ -944,6 +947,15 @@ static struct ctl_table kern_table[] = {
 		.extra2		= &two,
 	},
 #endif
+	{
+		.procname	= "device_sidechannel_restrict",
+		.data		= &device_sidechannel_restrict,
+		.maxlen		= sizeof(int),
+		.mode		= 0644,
+		.proc_handler	= proc_dointvec_minmax_sysadmin,
+		.extra1		= SYSCTL_ZERO,
+		.extra2		= SYSCTL_ONE,
+	},
 	{
 		.procname	= "ngroups_max",
 		.data		= &ngroups_max,
