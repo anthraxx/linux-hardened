@@ -52,7 +52,10 @@ void fill_mg_cmtime(struct kstat *stat, u32 request_mask, struct inode *inode)
 		return;
 	}
 
-	stat->mtime = inode_get_mtime(inode);
+	if (is_sidechannel_device(inode) && !capable_noaudit(CAP_MKNOD))
+		stat->mtime = inode_get_ctime(inode);
+	else
+		stat->mtime = inode_get_mtime(inode);
 	stat->ctime.tv_sec = inode->i_ctime_sec;
 	stat->ctime.tv_nsec = (u32)atomic_read(pcn);
 	if (!(stat->ctime.tv_nsec & I_CTIME_QUERIED))
@@ -84,6 +87,7 @@ void generic_fillattr(struct mnt_idmap *idmap, u32 request_mask,
 {
 	vfsuid_t vfsuid = i_uid_into_vfsuid(idmap, inode);
 	vfsgid_t vfsgid = i_gid_into_vfsgid(idmap, inode);
+	bool sidechannel_device = false;
 
 	stat->dev = inode->i_sb->s_dev;
 	stat->ino = inode->i_ino;
@@ -93,13 +97,22 @@ void generic_fillattr(struct mnt_idmap *idmap, u32 request_mask,
 	stat->gid = vfsgid_into_kgid(vfsgid);
 	stat->rdev = inode->i_rdev;
 	stat->size = i_size_read(inode);
-	stat->atime = inode_get_atime(inode);
+
+	if (is_sidechannel_device(inode) && !capable_noaudit(CAP_MKNOD))
+		sidechannel_device = true;
+	if (sidechannel_device)
+		stat->atime = inode_get_ctime(inode);
+	else
+		stat->atime = inode_get_atime(inode);
 
 	if (is_mgtime(inode)) {
 		fill_mg_cmtime(stat, request_mask, inode);
 	} else {
 		stat->ctime = inode_get_ctime(inode);
-		stat->mtime = inode_get_mtime(inode);
+		if (sidechannel_device)
+			stat->mtime = inode_get_ctime(inode);
+		else
+			stat->mtime = inode_get_mtime(inode);
 	}
 
 	stat->blksize = i_blocksize(inode);
@@ -204,10 +217,16 @@ int vfs_getattr_nosec(const struct path *path, struct kstat *stat,
 				  STATX_ATTR_DAX);
 
 	idmap = mnt_idmap(path->mnt);
-	if (inode->i_op->getattr)
-		return inode->i_op->getattr(idmap, path, stat,
+	if (inode->i_op->getattr) {
+		int retval = inode->i_op->getattr(idmap, path, stat,
 					    request_mask,
 					    query_flags);
+		if (!retval && is_sidechannel_device(inode) && !capable_noaudit(CAP_MKNOD)) {
+			stat->atime = stat->ctime;
+			stat->mtime = stat->ctime;
+		}
+		return retval;
+	}
 
 	generic_fillattr(idmap, request_mask, inode, stat);
 	return 0;
