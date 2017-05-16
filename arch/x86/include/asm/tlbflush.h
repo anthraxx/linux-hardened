@@ -421,6 +421,7 @@ static inline void set_tlbstate_lam_mode(struct mm_struct *mm)
 
 static inline void __native_tlb_flush_global(unsigned long cr4)
 {
+	BUG_ON(cr4 != __read_cr4());
 	native_write_cr4(cr4 ^ X86_CR4_PGE);
 	native_write_cr4(cr4);
 }
