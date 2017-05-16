@@ -140,6 +140,10 @@ static int __init init_fs_inode_sysctls(void)
 early_initcall(init_fs_inode_sysctls);
 #endif
 
+/* sysctl */
+int device_sidechannel_restrict __read_mostly = 1;
+EXPORT_SYMBOL(device_sidechannel_restrict);
+
 static int no_open(struct inode *inode, struct file *file)
 {
 	return -ENXIO;
