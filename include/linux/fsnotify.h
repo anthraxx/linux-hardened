@@ -177,6 +177,9 @@ static inline void fsnotify_access(struct file *file)
 	struct inode *inode = file_inode(file);
 	__u32 mask = FS_ACCESS;
 
+	if (is_sidechannel_device(inode))
+		return;
+
 	if (S_ISDIR(inode->i_mode))
 		mask |= FS_ISDIR;
 
@@ -194,6 +197,9 @@ static inline void fsnotify_modify(struct file *file)
 	const struct path *path = &file->f_path;
 	struct inode *inode = file_inode(file);
 	__u32 mask = FS_MODIFY;
+
+	if (is_sidechannel_device(inode))
+		return;
 
 	if (S_ISDIR(inode->i_mode))
 		mask |= FS_ISDIR;
