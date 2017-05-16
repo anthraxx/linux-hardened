@@ -4710,6 +4710,7 @@ void __ata_qc_complete(struct ata_queued_cmd *qc)
 	struct ata_port *ap;
 	struct ata_link *link;
 
+	BUG_ON(qc == NULL); /* ata_qc_from_tag _might_ return NULL */
 	if (WARN_ON_ONCE(!(qc->flags & ATA_QCFLAG_ACTIVE)))
 		return;
 
