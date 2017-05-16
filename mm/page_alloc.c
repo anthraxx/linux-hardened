@@ -828,12 +828,17 @@ void prep_compound_page(struct page *page, unsigned int order)
 	prep_compound_head(page, order);
 }
 
-void destroy_large_folio(struct folio *folio)
+compound_page_dtor *get_compound_page_dtor(struct folio *folio)
 {
 	enum compound_dtor_id dtor = folio_page(folio, 1)->compound_dtor;
 
 	VM_BUG_ON_FOLIO(dtor >= NR_COMPOUND_DTORS, folio);
-	compound_page_dtors[dtor](&folio->page);
+	return compound_page_dtors[dtor];
+}
+
+void destroy_large_folio(struct folio *folio)
+{
+	(*get_compound_page_dtor(folio))(&folio->page);
 }
 
 #ifdef CONFIG_DEBUG_PAGEALLOC
