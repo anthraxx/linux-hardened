@@ -168,6 +168,10 @@ late_initcall(mg_debugfs_init);
 
 #endif /* CONFIG_DEBUG_FS */
 
+/* sysctl */
+int device_sidechannel_restrict __read_mostly = 1;
+EXPORT_SYMBOL(device_sidechannel_restrict);
+
 /*
  * Handle nr_inode sysctl
  */
@@ -199,6 +203,15 @@ static const struct ctl_table inodes_sysctls[] = {
 		.maxlen		= 7*sizeof(long),
 		.mode		= 0444,
 		.proc_handler	= proc_nr_inodes,
+	},
+	{
+		.procname	= "device_sidechannel_restrict",
+		.data		= &device_sidechannel_restrict,
+		.maxlen		= sizeof(int),
+		.mode		= 0644,
+		.proc_handler	= proc_dointvec_minmax_sysadmin,
+		.extra1		= SYSCTL_ZERO,
+		.extra2		= SYSCTL_ONE,
 	},
 };
 
