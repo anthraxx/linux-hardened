@@ -116,6 +116,10 @@ int proc_nr_inodes(struct ctl_table *table, int write,
 }
 #endif
 
+/* sysctl */
+int device_sidechannel_restrict __read_mostly = 1;
+EXPORT_SYMBOL(device_sidechannel_restrict);
+
 static int no_open(struct inode *inode, struct file *file)
 {
 	return -ENXIO;
