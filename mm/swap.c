@@ -107,6 +107,8 @@ static void __folio_put_small(struct folio *folio)
 
 static void __folio_put_large(struct folio *folio)
 {
+	compound_page_dtor *dtor;
+
 	/*
 	 * __page_cache_release() is supposed to be called for thp, not for
 	 * hugetlb. This is because hugetlb page does never have PageLRU set
@@ -115,7 +117,15 @@ static void __folio_put_large(struct folio *folio)
 	 */
 	if (!folio_test_hugetlb(folio))
 		__page_cache_release(folio);
-	destroy_large_folio(folio);
+	dtor = get_compound_page_dtor(folio);
+	if (!folio_test_hugetlb(folio))
+		BUG_ON(dtor != free_compound_page
+#ifdef CONFIG_TRANSPARENT_HUGEPAGE
+			&& dtor != free_transhuge_page
+#endif
+		);
+
+	(*dtor)(&folio->page);
 }
 
 void __folio_put(struct folio *folio)
