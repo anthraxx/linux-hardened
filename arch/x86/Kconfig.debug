@@ -101,6 +101,7 @@ config EFI_PGT_DUMP
 config DEBUG_WX
 	bool "Warn on W+X mappings at boot"
 	select X86_PTDUMP_CORE
+	default y
 	---help---
 	  Generate a warning if any W+X mappings are found at boot.
 
