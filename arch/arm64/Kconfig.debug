@@ -45,6 +45,7 @@ config ARM64_RANDOMIZE_TEXT_OFFSET
 config DEBUG_WX
 	bool "Warn on W+X mappings at boot"
 	select ARM64_PTDUMP_CORE
+	default y
 	---help---
 	  Generate a warning if any W+X mappings are found at boot.
 
