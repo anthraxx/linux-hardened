@@ -14,6 +14,7 @@
 #include <uapi/linux/tty.h>
 #include <linux/rwsem.h>
 #include <linux/llist.h>
+#include <linux/user_namespace.h>
 
 
 /*
@@ -342,6 +343,7 @@ struct tty_struct {
 	/* If the tty has a pending do_SAK, queue it here - akpm */
 	struct work_struct SAK_work;
 	struct tty_port *port;
+	struct user_namespace *owner_user_ns;
 } __randomize_layout;
 
 /* Each of a tty's open files has private_data pointing to tty_file_private */
