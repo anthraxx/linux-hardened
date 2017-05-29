@@ -15,6 +15,7 @@
 #include <uapi/linux/tty.h>
 #include <linux/rwsem.h>
 #include <linux/llist.h>
+#include <linux/user_namespace.h>
 
 
 /*
@@ -185,6 +186,7 @@ struct tty_operations;
  * @write_cnt: count of bytes written in tty_write() to @write_buf
  * @SAK_work: if the tty has a pending do_SAK, it is queued here
  * @port: persistent storage for this device (i.e. &struct tty_port)
+ * @owner_user_ns: reference to the owner user namespace for capability checks
  *
  * All of the state associated with a tty while the tty is open. Persistent
  * storage for tty devices is referenced here as @port and is documented in
@@ -248,6 +250,7 @@ struct tty_struct {
 
 #define N_TTY_BUF_SIZE 4096
 	struct work_struct SAK_work;
+	struct user_namespace *owner_user_ns;
 } __randomize_layout;
 
 /* Each of a tty's open files has private_data pointing to tty_file_private */
