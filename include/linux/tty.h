@@ -260,6 +260,8 @@ struct tty_file_private {
 	struct list_head list;
 };
 
+extern int tiocsti_restrict;
+
 /**
  * DOC: TTY Struct Flags
  *
