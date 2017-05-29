@@ -164,6 +164,7 @@ config DEBUG_WX
 	depends on ARCH_HAS_DEBUG_WX
 	depends on MMU
 	select PTDUMP_CORE
+	default y
 	help
 	  Generate a warning if any W+X mappings are found at boot.
 
