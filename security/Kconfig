@@ -155,6 +155,7 @@ config HARDENED_USERCOPY
 	depends on HAVE_HARDENED_USERCOPY_ALLOCATOR
 	select BUG
 	imply STRICT_DEVMEM
+	default y
 	help
 	  This option checks for obviously wrong memory regions when
 	  copying memory to/from the kernel (via copy_to_user() and
