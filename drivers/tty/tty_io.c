@@ -2293,11 +2293,19 @@ static int tty_fasync(int fd, struct file *filp, int on)
  *		current->signal->tty check is safe without locks
  */
 
+int tiocsti_restrict = IS_ENABLED(CONFIG_SECURITY_TIOCSTI_RESTRICT);
+
 static int tiocsti(struct tty_struct *tty, char __user *p)
 {
 	char ch, mbz = 0;
 	struct tty_ldisc *ld;
 
+	if (tiocsti_restrict &&
+		!ns_capable(tty->owner_user_ns, CAP_SYS_ADMIN)) {
+		dev_warn_ratelimited(tty->dev,
+			"Denied TIOCSTI ioctl for non-privileged process\n");
+		return -EPERM;
+	}
 	if ((current->signal->tty != tty) && !capable(CAP_SYS_ADMIN))
 		return -EPERM;
 	if (get_user(ch, p))
