@@ -170,6 +170,7 @@ static void free_tty_struct(struct tty_struct *tty)
 	tty_ldisc_deinit(tty);
 	put_device(tty->dev);
 	kvfree(tty->write_buf);
+	put_user_ns(tty->owner_user_ns);
 	kfree(tty);
 }
 
@@ -3117,6 +3118,7 @@ struct tty_struct *alloc_tty_struct(struct tty_driver *driver, int idx)
 	tty->index = idx;
 	tty_line_name(driver, idx, tty->name);
 	tty->dev = tty_get_device(tty);
+	tty->owner_user_ns = get_user_ns(current_user_ns());
 
 	return tty;
 }
