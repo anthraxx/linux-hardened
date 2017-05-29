@@ -102,6 +102,7 @@ show up in /proc/sys/kernel:
 - sysctl_writes_strict
 - tainted                     ==> Documentation/admin-guide/tainted-kernels.rst
 - threads-max
+- tiocsti_restrict
 - unknown_nmi_panic
 - watchdog
 - watchdog_thresh
@@ -1145,6 +1146,25 @@ EINVAL occurs.
 The value written is checked against the available RAM pages. If the
 thread structures would occupy too much (more than 1/8th) of the
 available RAM pages threads-max is reduced accordingly.
+
+
+tiocsti_restrict:
+=================
+
+This toggle indicates whether unprivileged users are prevented from using the
+TIOCSTI ioctl to inject commands into other processes which share a tty
+session.
+
+When tiocsti_restrict is set to (0) there are no restrictions(accept the
+default restriction of only being able to injection commands into one's own
+tty). When tiocsti_restrict is set to (1), users must have CAP_SYS_ADMIN to
+use the TIOCSTI ioctl.
+
+When user namespaces are in use, the check for the capability CAP_SYS_ADMIN is
+done against the user namespace that originally opened the tty.
+
+The kernel config option CONFIG_SECURITY_TIOCSTI_RESTRICT sets the default
+value of tiocsti_restrict.
 
 
 unknown_nmi_panic:
