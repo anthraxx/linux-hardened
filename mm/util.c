@@ -357,9 +357,9 @@ unsigned long arch_randomize_brk(struct mm_struct *mm)
 {
 	/* Is the current task 32bit ? */
 	if (!IS_ENABLED(CONFIG_64BIT) || is_compat_task())
-		return mm->brk + get_random_long() % SZ_32M;
+		return mm->brk + get_random_long() % SZ_32M + PAGE_SIZE;
 
-	return mm->brk + get_random_long() % SZ_1G;
+	return mm->brk + get_random_long() % SZ_1G + PAGE_SIZE;
 }
 
 unsigned long arch_mmap_rnd(void)
