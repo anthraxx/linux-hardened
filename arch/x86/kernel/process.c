@@ -995,9 +995,9 @@ unsigned long arch_align_stack(unsigned long sp)
 unsigned long arch_randomize_brk(struct mm_struct *mm)
 {
 	if (mmap_is_ia32())
-		return randomize_page(mm->brk, SZ_32M);
+		return mm->brk + get_random_long() % SZ_32M;
 	else
-		return randomize_page(mm->brk, SZ_1G);
+		return mm->brk + get_random_long() % SZ_1G;
 }
 
 /*
