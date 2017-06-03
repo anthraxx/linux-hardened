@@ -200,6 +200,16 @@ config FORTIFY_SOURCE
 	  Detect overflows of buffers in common string and memory functions
 	  where the compiler can determine and validate the buffer sizes.
 
+config FORTIFY_SOURCE_STRICT_STRING
+	bool "Harden common functions against buffer overflows"
+	depends on FORTIFY_SOURCE
+	depends on EXPERT
+	help
+	  Perform stricter overflow checks catching overflows within objects
+	  for common C string functions rather than only between objects.
+
+	  This is not yet intended for production use, only bug finding.
+
 config STATIC_USERMODEHELPER
 	bool "Force all usermode helper calls through a single binary"
 	help
