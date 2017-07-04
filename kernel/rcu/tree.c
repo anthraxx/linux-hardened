@@ -2389,7 +2389,7 @@ static __latent_entropy void rcu_core(void)
 	trace_rcu_utilization(TPS("End RCU core"));
 }
 
-static void rcu_core_si(struct softirq_action *h)
+static void rcu_core_si(void)
 {
 	rcu_core();
 }
