@@ -56,7 +56,7 @@ DEFINE_PER_CPU_ALIGNED(irq_cpustat_t, irq_stat);
 EXPORT_PER_CPU_SYMBOL(irq_stat);
 #endif
 
-static struct softirq_action softirq_vec[NR_SOFTIRQS] __cacheline_aligned_in_smp;
+static struct softirq_action softirq_vec[NR_SOFTIRQS] __ro_after_init __aligned(PAGE_SIZE);
 
 DEFINE_PER_CPU(struct task_struct *, ksoftirqd);
 
