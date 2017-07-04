@@ -110,10 +110,7 @@ static void find_start_end(unsigned long addr, unsigned long flags,
 	}
 
 	*begin	= get_mmap_base(1);
-	if (in_32bit_syscall())
-		*end = task_size_32bit();
-	else
-		*end = task_size_64bit(addr > DEFAULT_MAP_WINDOW);
+	*end	= get_mmap_base(0);
 }
 
 unsigned long
@@ -190,7 +187,7 @@ get_unmapped_area:
 
 	info.flags = VM_UNMAPPED_AREA_TOPDOWN;
 	info.length = len;
-	info.low_limit = PAGE_SIZE;
+	info.low_limit = get_mmap_base(1);
 	info.high_limit = get_mmap_base(0);
 
 	/*
