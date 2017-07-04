@@ -554,7 +554,7 @@ extern const char * const softirq_to_name[NR_SOFTIRQS];
 
 struct softirq_action
 {
-	void	(*action)(struct softirq_action *);
+	void	(*action)(void);
 };
 
 asmlinkage void do_softirq(void);
@@ -569,7 +569,7 @@ static inline void do_softirq_own_stack(void)
 }
 #endif
 
-extern void __init open_softirq(int nr, void (*action)(struct softirq_action *));
+extern void __init open_softirq(int nr, void (*action)(void));
 extern void softirq_init(void);
 extern void __raise_softirq_irqoff(unsigned int nr);
 
