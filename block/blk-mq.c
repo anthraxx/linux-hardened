@@ -572,7 +572,7 @@ EXPORT_SYMBOL(blk_mq_end_request);
  * Softirq action handler - move entries to local list and loop over them
  * while passing them to the queue registered handler.
  */
-static __latent_entropy void blk_done_softirq(struct softirq_action *h)
+static __latent_entropy void blk_done_softirq(void)
 {
 	struct list_head *cpu_list, local_list;
 
