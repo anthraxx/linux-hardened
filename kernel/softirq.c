@@ -700,7 +700,7 @@ void __raise_softirq_irqoff(unsigned int nr)
 	or_softirq_pending(1UL << nr);
 }
 
-void open_softirq(int nr, void (*action)(void))
+void __init open_softirq(int nr, void (*action)(void))
 {
 	softirq_vec[nr].action = action;
 }
