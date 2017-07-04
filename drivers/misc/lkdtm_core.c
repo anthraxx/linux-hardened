@@ -78,7 +78,7 @@ static irqreturn_t jp_handle_irq_event(unsigned int irq,
 	return 0;
 }
 
-static void jp_tasklet_action(struct softirq_action *a)
+static void jp_tasklet_action(void)
 {
 	lkdtm_handler();
 	jprobe_return();
