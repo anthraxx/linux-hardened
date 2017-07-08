@@ -244,7 +244,6 @@ config SLUB_TINY
 
 config SLAB_MERGE_DEFAULT
 	bool "Allow slab caches to be merged"
-	default y
 	help
 	  For reduced kernel memory fragmentation, slab caches can be
 	  merged when they share the same size and other characteristics.
