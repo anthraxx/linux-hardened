@@ -34,6 +34,7 @@ static bool warn_unresolved;
 
 static int sec_mismatch_count;
 static bool sec_mismatch_warn_only = true;
+static int writable_fptr_count = 0;
 /* ignore missing files */
 static bool ignore_missing_files;
 /* If set to 1, only warn (instead of error) about missing ns imports */
@@ -867,6 +868,7 @@ enum mismatch {
 	ANY_EXIT_TO_ANY_INIT,
 	EXPORT_TO_INIT_EXIT,
 	EXTABLE_TO_NON_TEXT,
+	DATA_TO_TEXT
 };
 
 /**
@@ -975,6 +977,12 @@ static const struct sectioncheck sectioncheck[] = {
 	.good_tosec = {ALL_TEXT_SECTIONS , NULL},
 	.mismatch = EXTABLE_TO_NON_TEXT,
 	.handler = extable_mismatch_handler,
+},
+/* Do not reference code from writable data */
+{
+	.fromsec = { DATA_SECTIONS, NULL },
+	.bad_tosec = { ALL_TEXT_SECTIONS, NULL },
+	.mismatch = DATA_TO_TEXT
 }
 };
 
@@ -1165,10 +1173,10 @@ static Elf_Sym *find_elf_symbol(struct elf_info *elf, Elf64_Sword addr,
 			continue;
 		if (!is_valid_name(elf, sym))
 			continue;
-		if (sym->st_value == addr)
-			return sym;
 		/* Find a symbol nearby - addr are maybe negative */
 		d = sym->st_value - addr;
+		if (d == 0)
+			return sym;
 		if (d < 0)
 			d = addr - sym->st_value;
 		if (d < distance) {
@@ -1242,7 +1250,10 @@ static void report_sec_mismatch(const char *modname,
 				const char *fromsym,
 				const char *tosec, const char *tosym)
 {
-	sec_mismatch_count++;
+	if (mismatch->mismatch == DATA_TO_TEXT)
+		writable_fptr_count++;
+	else
+		sec_mismatch_count++;
 
 	switch (mismatch->mismatch) {
 	case TEXT_TO_ANY_INIT:
@@ -1262,6 +1273,14 @@ static void report_sec_mismatch(const char *modname,
 		break;
 	case EXTABLE_TO_NON_TEXT:
 		fatal("There's a special handler for this mismatch type, we should never get here.\n");
+		break;
+	case DATA_TO_TEXT:
+#if 0
+		fprintf(stderr,
+		"The %s:%s references\n"
+		"the %s:%s\n",
+		fromsec, fromsym, tosec, tosym);
+#endif
 		break;
 	}
 }
@@ -2402,6 +2421,10 @@ int main(int argc, char **argv)
 	if (nr_unresolved > MAX_UNRESOLVED_REPORTS)
 		warn("suppressed %u unresolved symbol warnings because there were too many)\n",
 		     nr_unresolved - MAX_UNRESOLVED_REPORTS);
+
+	if (writable_fptr_count)
+		warn("modpost: Found %d writable function pointer(s).\n",
+				writable_fptr_count);
 
 	return error_occurred ? 1 : 0;
 }
