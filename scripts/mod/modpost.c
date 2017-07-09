@@ -39,6 +39,7 @@ static bool sec_mismatch_warn_only = true;
 /* Trim EXPORT_SYMBOLs that are unused by in-tree modules */
 static bool trim_unused_exports;
 
+static int writable_fptr_count = 0;
 /* ignore missing files */
 static bool ignore_missing_files;
 /* If set to 1, only warn (instead of error) about missing ns imports */
@@ -836,6 +837,7 @@ enum mismatch {
 	ANY_INIT_TO_ANY_EXIT,
 	ANY_EXIT_TO_ANY_INIT,
 	EXTABLE_TO_NON_TEXT,
+	DATA_TO_TEXT
 };
 
 /**
@@ -914,6 +916,12 @@ static const struct sectioncheck sectioncheck[] = {
 	.bad_tosec = { ".altinstr_replacement", NULL },
 	.good_tosec = {ALL_TEXT_SECTIONS , NULL},
 	.mismatch = EXTABLE_TO_NON_TEXT,
+},
+/* Do not reference code from writable data */
+{
+	.fromsec = { DATA_SECTIONS, NULL },
+	.bad_tosec = { ALL_TEXT_SECTIONS, NULL },
+	.mismatch = DATA_TO_TEXT
 }
 };
 
@@ -1158,7 +1166,10 @@ static void default_mismatch_handler(const char *modname, struct elf_info *elf,
 	if (!secref_whitelist(fromsec, fromsym, tosec, tosym))
 		return;
 
-	sec_mismatch_count++;
+	if (mismatch->mismatch == DATA_TO_TEXT)
+		writable_fptr_count++;
+	else
+		sec_mismatch_count++;
 
 	warn("%s: section mismatch in reference: %s+0x%x (section: %s) -> %s (section: %s)\n",
 	     modname, fromsym, (unsigned int)(faddr - from->st_value), fromsec, tosym, tosec);
@@ -1183,6 +1194,11 @@ static void default_mismatch_handler(const char *modname, struct elf_info *elf,
 		else
 			error("%s+0x%lx references non-executable section '%s'\n",
 			      fromsec, (long)faddr, tosec);
+	} else if (mismatch->mismatch == DATA_TO_TEXT) {
+		fprintf(stderr,
+		"The %s:%s references\n"
+		"the %s:%s\n",
+		fromsec, fromsym, tosec, tosym);
 	}
 }
 
@@ -2385,6 +2401,10 @@ int main(int argc, char **argv)
 	if (nr_unresolved > MAX_UNRESOLVED_REPORTS)
 		warn("suppressed %u unresolved symbol warnings because there were too many)\n",
 		     nr_unresolved - MAX_UNRESOLVED_REPORTS);
+
+	if (writable_fptr_count)
+		warn("modpost: Found %d writable function pointer(s).\n",
+				writable_fptr_count);
 
 	return error_occurred ? 1 : 0;
 }
