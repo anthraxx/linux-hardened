@@ -1611,6 +1611,9 @@ static int __init audit_enable(char *str)
 	audit_default = !!simple_strtol(str, NULL, 0);
 	if (!audit_default)
 		audit_initialized = AUDIT_DISABLED;
+        else
+		audit_initialized = AUDIT_UNINITIALIZED;
+
 	audit_enabled = audit_default;
 	audit_ever_enabled = !!audit_enabled;
 
