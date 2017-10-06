@@ -1361,7 +1361,7 @@ config SHMEM
 	  which may be appropriate on small systems without swap.
 
 config AIO
-	bool "Enable AIO support" if EXPERT
+	bool "Enable AIO support"
 	default y
 	help
 	  This option enables POSIX asynchronous I/O which may by used
