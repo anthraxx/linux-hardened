@@ -1648,7 +1648,6 @@ config SHMEM
 
 config AIO
 	bool "Enable AIO support"
-	default y
 	help
 	  This option enables POSIX asynchronous I/O which may by used
 	  by some high performance threaded applications. Disabling
