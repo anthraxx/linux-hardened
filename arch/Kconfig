@@ -845,6 +845,7 @@ config ARCH_HAS_REFCOUNT
 
 config REFCOUNT_FULL
 	bool "Perform full reference count validation at the expense of speed"
+	default y
 	help
 	  Enabling this switches the refcounting infrastructure from a fast
 	  unchecked atomic_t implementation to a fully state checked
