@@ -261,6 +261,7 @@ config IP_PIMSM_V2
 
 config SYN_COOKIES
 	bool "IP: TCP syncookie support"
+	default y
 	---help---
 	  Normal TCP/IP networking is open to an attack known as "SYN
 	  flooding". This denial-of-service attack prevents legitimate remote
