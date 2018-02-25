@@ -22,6 +22,7 @@ config SECURITY
 	bool "Enable different security models"
 	depends on SYSFS
 	depends on MULTIUSER
+	default y
 	help
 	  This allows you to choose different security modules to be
 	  configured into your kernel.
