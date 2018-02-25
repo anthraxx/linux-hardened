@@ -750,20 +750,9 @@ static ssize_t sel_write_checkreqprot(struct file *file, const char __user *buf,
 		return PTR_ERR(page);
 
 	length = -EINVAL;
-	if (sscanf(page, "%u", &new_value) != 1)
+	if (sscanf(page, "%u", &new_value) != 1 || new_value)
 		goto out;
 
-	if (new_value) {
-		char comm[sizeof(current->comm)];
-
-		memcpy(comm, current->comm, sizeof(comm));
-		pr_err("SELinux: %s (%d) set checkreqprot to 1. This is deprecated and will be rejected in a future kernel release.\n",
-		       comm, current->pid);
-	}
-
-	checkreqprot_set(fsi->state, (new_value ? 1 : 0));
-	if (new_value)
-		ssleep(5);
 	length = count;
 
 	selinux_ima_measure_state(fsi->state);
