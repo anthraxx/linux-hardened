@@ -44,6 +44,7 @@ config SECURITYFS
 config SECURITY_NETWORK
 	bool "Socket and Networking Security Hooks"
 	depends on SECURITY
+	default y
 	help
 	  This enables the socket and networking security hooks.
 	  If enabled, a security module can use these hooks to
