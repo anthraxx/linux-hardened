@@ -136,21 +136,7 @@ static int __init selinux_enabled_setup(char *str)
 __setup("selinux=", selinux_enabled_setup);
 #endif
 
-static unsigned int selinux_checkreqprot_boot =
-	CONFIG_SECURITY_SELINUX_CHECKREQPROT_VALUE;
-
-static int __init checkreqprot_setup(char *str)
-{
-	unsigned long checkreqprot;
-
-	if (!kstrtoul(str, 0, &checkreqprot)) {
-		selinux_checkreqprot_boot = checkreqprot ? 1 : 0;
-		if (checkreqprot)
-			pr_err("SELinux: checkreqprot set to 1 via kernel parameter.  This is deprecated and will be rejected in a future kernel release.\n");
-	}
-	return 1;
-}
-__setup("checkreqprot=", checkreqprot_setup);
+static const unsigned int selinux_checkreqprot_boot;
 
 /**
  * selinux_secmark_enabled - Check to see if SECMARK is currently enabled
@@ -7311,8 +7297,6 @@ static __init int selinux_init(void)
 
 	memset(&selinux_state, 0, sizeof(selinux_state));
 	enforcing_set(&selinux_state, selinux_enforcing_boot);
-	if (CONFIG_SECURITY_SELINUX_CHECKREQPROT_VALUE)
-		pr_err("SELinux: CONFIG_SECURITY_SELINUX_CHECKREQPROT_VALUE is non-zero.  This is deprecated and will be rejected in a future kernel release.\n");
 	checkreqprot_set(&selinux_state, selinux_checkreqprot_boot);
 	selinux_avc_init(&selinux_state.avc);
 	mutex_init(&selinux_state.status_lock);
