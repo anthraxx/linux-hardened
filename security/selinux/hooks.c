@@ -135,18 +135,7 @@ static int __init selinux_enabled_setup(char *str)
 __setup("selinux=", selinux_enabled_setup);
 #endif
 
-static unsigned int selinux_checkreqprot_boot =
-	CONFIG_SECURITY_SELINUX_CHECKREQPROT_VALUE;
-
-static int __init checkreqprot_setup(char *str)
-{
-	unsigned long checkreqprot;
-
-	if (!kstrtoul(str, 0, &checkreqprot))
-		selinux_checkreqprot_boot = checkreqprot ? 1 : 0;
-	return 1;
-}
-__setup("checkreqprot=", checkreqprot_setup);
+static const unsigned int selinux_checkreqprot_boot;
 
 /**
  * selinux_secmark_enabled - Check to see if SECMARK is currently enabled
