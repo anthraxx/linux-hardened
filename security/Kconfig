@@ -156,7 +156,6 @@ config HARDENED_USERCOPY
 config HARDENED_USERCOPY_FALLBACK
 	bool "Allow usercopy whitelist violations to fallback to object size"
 	depends on HARDENED_USERCOPY
-	default y
 	help
 	  This is a temporary option that allows missing usercopy whitelists
 	  to be discovered via a WARN() to the kernel log, instead of
