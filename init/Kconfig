@@ -1401,6 +1401,7 @@ config ADVISE_SYSCALLS
 config BPF_UNPRIV_DEFAULT_OFF
 	bool "Disable unprivileged BPF by default"
 	depends on BPF_SYSCALL
+	default y
 	help
 	  Disables unprivileged BPF by default by setting the corresponding
 	  /proc/sys/kernel/unprivileged_bpf_disabled knob to 2. An admin can
