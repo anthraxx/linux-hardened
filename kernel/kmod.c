@@ -149,6 +149,14 @@ int __request_module(bool wait, const char *fmt, ...)
 	if (ret)
 		return ret;
 
+	// equivalent to GRKERNSEC_MODHARDEN
+	if (uid_eq(current_uid(), GLOBAL_ROOT_UID)) {
+		printk(KERN_ERR
+			"warning: denied kernel module auto-load of %s\n",
+			module_name);
+		return -EPERM;
+	}
+
 	if (atomic_dec_if_positive(&kmod_concurrent_max) < 0) {
 		pr_warn_ratelimited("request_module: kmod_concurrent_max (%u) close to 0 (max_modprobes: %u), for module %s, throttling...",
 				    atomic_read(&kmod_concurrent_max),
