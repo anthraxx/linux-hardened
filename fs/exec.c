@@ -1535,6 +1535,8 @@ static void bprm_fill_uid(struct linux_binprm *bprm)
 		 !kgid_has_mapping(bprm->cred->user_ns, gid))
 		return;
 
+	printk(KERN_ERR "linux-hardened: %s executed by the uid/euid:%u/%u just used a SUID\n", current->comm, current_uid(), current_euid());
+
 	if (mode & S_ISUID) {
 		bprm->per_clear |= PER_CLEAR_ON_SETID;
 		bprm->cred->euid = uid;
