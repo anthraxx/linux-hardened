@@ -775,7 +775,7 @@ void __init mem_init(void)
 	test_wp_bit();
 }
 
-int kernel_set_to_readonly __ro_after_init;
+int kernel_set_to_readonly __read_mostly;
 
 static void mark_nxdata_nx(void)
 {
@@ -799,10 +799,11 @@ void mark_rodata_ro(void)
 	unsigned long start = PFN_ALIGN(_text);
 	unsigned long size = (unsigned long)__end_rodata - start;
 
-	kernel_set_to_readonly = 1;
 	set_pages_ro(virt_to_page(start), size >> PAGE_SHIFT);
 	pr_info("Write protecting kernel text and read-only data: %luk\n",
 		size >> 10);
+
+	kernel_set_to_readonly = 1;
 
 #ifdef CONFIG_CPA_DEBUG
 	pr_info("Testing CPA: Reverting %lx-%lx\n", start, start + size);
