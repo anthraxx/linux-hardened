@@ -39,6 +39,7 @@ static bool sec_mismatch_warn_only = true;
 static bool trim_unused_exports;
 
 static int writable_fptr_count = 0;
+static int writable_fptr_verbose = false;
 /* ignore missing files */
 static bool ignore_missing_files;
 /* If set to 1, only warn (instead of error) about missing ns imports */
@@ -1065,10 +1066,13 @@ static void default_mismatch_handler(const char *modname, struct elf_info *elf,
 	if (!secref_whitelist(fromsec, fromsym, tosec, tosym))
 		return;
 
-	if (mismatch->mismatch == DATA_TO_TEXT)
+	if (mismatch->mismatch == DATA_TO_TEXT) {
 		writable_fptr_count++;
-	else
+		if (!writable_fptr_verbose)
+			return;
+	} else {
 		sec_mismatch_count++;
+	}
 
 	warn("%s: section mismatch in reference: %s+0x%x (section: %s) -> %s (section: %s)\n",
 	     modname, fromsym, (unsigned int)(faddr - from->st_value), fromsec, tosym, tosec);
@@ -2199,7 +2203,7 @@ int main(int argc, char **argv)
 	LIST_HEAD(dump_lists);
 	struct dump_list *dl, *dl2;
 
-	while ((opt = getopt(argc, argv, "ei:MmnT:to:au:WwENd:")) != -1) {
+	while ((opt = getopt(argc, argv, "ei:fMmnT:to:au:WwENd:")) != -1) {
 		switch (opt) {
 		case 'e':
 			external_module = true;
@@ -2208,6 +2212,9 @@ int main(int argc, char **argv)
 			dl = NOFAIL(malloc(sizeof(*dl)));
 			dl->file = optarg;
 			list_add_tail(&dl->list, &dump_lists);
+			break;
+		case 'f':
+			writable_fptr_verbose = true;
 			break;
 		case 'M':
 			module_enabled = true;
@@ -2299,9 +2306,11 @@ int main(int argc, char **argv)
 		warn("suppressed %u unresolved symbol warnings because there were too many)\n",
 		     nr_unresolved - MAX_UNRESOLVED_REPORTS);
 
-	if (writable_fptr_count)
-		warn("modpost: Found %d writable function pointer(s).\n",
-				writable_fptr_count);
+	if (writable_fptr_count && !writable_fptr_verbose)
+		warn("modpost: Found %d writable function pointer%s.\n"
+		     "To see full details build your kernel with:\n"
+		     "'make CONFIG_DEBUG_WRITABLE_FUNCTION_POINTERS_VERBOSE=y'\n",
+		     writable_fptr_count, (writable_fptr_count == 1 ? "" : "s"));
 
 	return error_occurred ? 1 : 0;
 }
