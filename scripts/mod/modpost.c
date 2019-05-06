@@ -37,6 +37,7 @@ static int warn_unresolved = 0;
 static int sec_mismatch_count = 0;
 static int sec_mismatch_fatal = 0;
 static int writable_fptr_count = 0;
+static int writable_fptr_verbose = false;
 /* ignore missing files */
 static int ignore_missing_files;
 /* write namespace dependencies */
@@ -1483,10 +1484,13 @@ static void report_sec_mismatch(const char *modname,
 	char *prl_from;
 	char *prl_to;
 
-	if (mismatch->mismatch == DATA_TO_TEXT)
+	if (mismatch->mismatch == DATA_TO_TEXT) {
 		writable_fptr_count++;
-	else
+		if (!writable_fptr_verbose)
+			return;
+	} else {
 		sec_mismatch_count++;
+	}
 
 	get_pretty_name(from_is_func, &from, &from_p);
 	get_pretty_name(to_is_func, &to, &to_p);
@@ -1609,12 +1613,10 @@ static void report_sec_mismatch(const char *modname,
 		      "we should never get here.");
 		break;
 	case DATA_TO_TEXT:
-#if 0
 		fprintf(stderr,
 		"The %s %s:%s references\n"
 		"the %s %s:%s%s\n",
 		from, fromsec, fromsym, to, tosec, tosym, to_p);
-#endif
 		break;
 	}
 	fprintf(stderr, "\n");
@@ -2607,7 +2609,7 @@ int main(int argc, char **argv)
 	struct ext_sym_list *extsym_iter;
 	struct ext_sym_list *extsym_start = NULL;
 
-	while ((opt = getopt(argc, argv, "i:I:e:mnsT:o:awEd")) != -1) {
+	while ((opt = getopt(argc, argv, "i:I:e:fmnsT:o:awEd")) != -1) {
 		switch (opt) {
 		case 'i':
 			kernel_read = optarg;
@@ -2623,6 +2625,9 @@ int main(int argc, char **argv)
 			extsym_iter->next = extsym_start;
 			extsym_iter->file = optarg;
 			extsym_start = extsym_iter;
+			break;
+		case 'f':
+			writable_fptr_verbose = true;
 			break;
 		case 'm':
 			modversions = 1;
@@ -2730,9 +2735,11 @@ int main(int argc, char **argv)
 	}
 
 	free(buf.p);
-	if (writable_fptr_count)
-		warn("modpost: Found %d writable function pointer(s).\n",
-			writable_fptr_count);
+	if (writable_fptr_count && !writable_fptr_verbose)
+		warn("modpost: Found %d writable function pointer%s.\n"
+		     "To see full details build your kernel with:\n"
+		     "'make CONFIG_DEBUG_WRITABLE_FUNCTION_POINTERS_VERBOSE=y'\n",
+		     writable_fptr_count, (writable_fptr_count == 1 ? "" : "s"));
 
 	return err;
 }
