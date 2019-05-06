@@ -363,6 +363,9 @@ config SECTION_MISMATCH_WARN_ONLY
 
 	  If unsure, say Y.
 
+config DEBUG_WRITABLE_FUNCTION_POINTERS_VERBOSE
+	bool "Enable verbose reporting of writable function pointers"
+
 config DEBUG_FORCE_FUNCTION_ALIGN_32B
 	bool "Force all function address 32B aligned" if EXPERT
 	help
