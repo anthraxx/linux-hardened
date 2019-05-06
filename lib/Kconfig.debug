@@ -464,6 +464,9 @@ config SECTION_MISMATCH_WARN_ONLY
 
 	  If unsure, say Y.
 
+config DEBUG_WRITABLE_FUNCTION_POINTERS_VERBOSE
+	bool "Enable verbose reporting of writable function pointers"
+
 config DEBUG_FORCE_FUNCTION_ALIGN_64B
 	bool "Force all function address 64B aligned"
 	depends on EXPERT && (X86_64 || ARM64 || PPC32 || PPC64 || ARC)
