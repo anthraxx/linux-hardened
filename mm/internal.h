@@ -378,6 +378,9 @@ extern void memblock_free_pages(struct page *page, unsigned long pfn,
 					unsigned int order);
 extern void __free_pages_core(struct page *page, unsigned int order);
 
+extern void __init __gather_extra_latent_entropy(struct page *page,
+						 unsigned int nr_pages);
+
 static inline void prep_compound_head(struct page *page, unsigned int order)
 {
 	struct folio *folio = (struct folio *)page;
