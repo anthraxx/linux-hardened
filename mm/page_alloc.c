@@ -1723,6 +1723,25 @@ static void __free_pages_ok(struct page *page, unsigned int order,
 	__count_vm_events(PGFREE, 1 << order);
 }
 
+static void __init __gather_extra_latent_entropy(struct page *page,
+						 unsigned int nr_pages)
+{
+	if (extra_latent_entropy && !PageHighMem(page) && page_to_pfn(page) < 0x100000) {
+		unsigned long hash = 0;
+		size_t index, end = PAGE_SIZE * nr_pages / sizeof hash;
+		const unsigned long *data = lowmem_page_address(page);
+
+		for (index = 0; index < end; index++)
+			hash ^= hash + data[index];
+#ifdef CONFIG_GCC_PLUGIN_LATENT_ENTROPY
+		latent_entropy ^= hash;
+		add_device_randomness((const void *)&latent_entropy, sizeof(latent_entropy));
+#else
+		add_device_randomness((const void *)&hash, sizeof(hash));
+#endif
+	}
+}
+
 void __free_pages_core(struct page *page, unsigned int order)
 {
 	unsigned int nr_pages = 1 << order;
@@ -1742,22 +1761,6 @@ void __free_pages_core(struct page *page, unsigned int order)
 	}
 	__ClearPageReserved(p);
 	set_page_count(p, 0);
-
-	if (extra_latent_entropy && !PageHighMem(page) && page_to_pfn(page) < 0x100000) {
-		unsigned long hash = 0;
-		size_t index, end = PAGE_SIZE * nr_pages / sizeof hash;
-		const unsigned long *data = lowmem_page_address(page);
-
-		for (index = 0; index < end; index++)
-			hash ^= hash + data[index];
-#ifdef CONFIG_GCC_PLUGIN_LATENT_ENTROPY
-		latent_entropy ^= hash;
-		add_device_randomness((const void *)&latent_entropy, sizeof(latent_entropy));
-#else
-		add_device_randomness((const void *)&hash, sizeof(hash));
-#endif
-	}
-
 	atomic_long_add(nr_pages, &page_zone(page)->managed_pages);
 
 	/*
@@ -1828,6 +1831,7 @@ void __init memblock_free_pages(struct page *page, unsigned long pfn,
 		/* KMSAN will take care of these pages. */
 		return;
 	}
+	__gather_extra_latent_entropy(page, 1 << order);
 	__free_pages_core(page, order);
 }
 
@@ -1916,6 +1920,7 @@ static void __init deferred_free_range(unsigned long pfn,
 	/* Free a large naturally-aligned chunk if possible */
 	if (nr_pages == pageblock_nr_pages && pageblock_aligned(pfn)) {
 		set_pageblock_migratetype(page, MIGRATE_MOVABLE);
+		__gather_extra_latent_entropy(page, 1 << pageblock_order);
 		__free_pages_core(page, pageblock_order);
 		return;
 	}
@@ -1923,6 +1928,7 @@ static void __init deferred_free_range(unsigned long pfn,
 	for (i = 0; i < nr_pages; i++, page++, pfn++) {
 		if (pageblock_aligned(pfn))
 			set_pageblock_migratetype(page, MIGRATE_MOVABLE);
+		__gather_extra_latent_entropy(page, 1);
 		__free_pages_core(page, 0);
 	}
 }
