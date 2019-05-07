@@ -1443,21 +1443,9 @@ static void __free_pages_ok(struct page *page, unsigned int order)
 	local_irq_restore(flags);
 }
 
-void __free_pages_core(struct page *page, unsigned int order)
+static void __init __gather_extra_latent_entropy(struct page *page,
+						 unsigned int nr_pages)
 {
-	unsigned int nr_pages = 1 << order;
-	struct page *p = page;
-	unsigned int loop;
-
-	prefetchw(p);
-	for (loop = 0; loop < (nr_pages - 1); loop++, p++) {
-		prefetchw(p + 1);
-		__ClearPageReserved(p);
-		set_page_count(p, 0);
-	}
-	__ClearPageReserved(p);
-	set_page_count(p, 0);
-
 	if (extra_latent_entropy && !PageHighMem(page) && page_to_pfn(page) < 0x100000) {
 		unsigned long hash = 0;
 		size_t index, end = PAGE_SIZE * nr_pages / sizeof hash;
@@ -1472,7 +1460,22 @@ void __free_pages_core(struct page *page, unsigned int order)
 		add_device_randomness((const void *)&hash, sizeof(hash));
 #endif
 	}
+}
 
+void __free_pages_core(struct page *page, unsigned int order)
+{
+	unsigned int nr_pages = 1 << order;
+	struct page *p = page;
+	unsigned int loop;
+
+	prefetchw(p);
+	for (loop = 0; loop < (nr_pages - 1); loop++, p++) {
+		prefetchw(p + 1);
+		__ClearPageReserved(p);
+		set_page_count(p, 0);
+	}
+	__ClearPageReserved(p);
+	set_page_count(p, 0);
 	atomic_long_add(nr_pages, &page_zone(page)->managed_pages);
 	set_page_refcounted(page);
 	__free_pages(page, order);
@@ -1523,6 +1526,7 @@ void __init memblock_free_pages(struct page *page, unsigned long pfn,
 {
 	if (early_page_uninitialised(pfn))
 		return;
+	__gather_extra_latent_entropy(page, 1 << order);
 	__free_pages_core(page, order);
 }
 
@@ -1614,6 +1618,7 @@ static void __init deferred_free_range(unsigned long pfn,
 	if (nr_pages == pageblock_nr_pages &&
 	    (pfn & (pageblock_nr_pages - 1)) == 0) {
 		set_pageblock_migratetype(page, MIGRATE_MOVABLE);
+		__gather_extra_latent_entropy(page, 1 << pageblock_order);
 		__free_pages_core(page, pageblock_order);
 		return;
 	}
@@ -1621,6 +1626,7 @@ static void __init deferred_free_range(unsigned long pfn,
 	for (i = 0; i < nr_pages; i++, page++, pfn++) {
 		if ((pfn & (pageblock_nr_pages - 1)) == 0)
 			set_pageblock_migratetype(page, MIGRATE_MOVABLE);
+		__gather_extra_latent_entropy(page, 1);
 		__free_pages_core(page, 0);
 	}
 }
