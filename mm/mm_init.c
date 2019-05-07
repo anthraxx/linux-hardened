@@ -2002,6 +2002,7 @@ static void __init deferred_free_pages(unsigned long pfn,
 		for (i = 0; i < nr_pages; i += pageblock_nr_pages)
 			init_pageblock_migratetype(page + i, MIGRATE_MOVABLE,
 					false);
+		__gather_extra_latent_entropy(page, 1 << MAX_PAGE_ORDER);
 		__free_pages_core(page, MAX_PAGE_ORDER, MEMINIT_EARLY);
 		return;
 	}
@@ -2013,6 +2014,7 @@ static void __init deferred_free_pages(unsigned long pfn,
 		if (pageblock_aligned(pfn))
 			init_pageblock_migratetype(page, MIGRATE_MOVABLE,
 					false);
+		__gather_extra_latent_entropy(page, 1);
 		__free_pages_core(page, 0, MEMINIT_EARLY);
 	}
 }
@@ -2565,6 +2567,7 @@ void __init memblock_free_pages(struct page *page, unsigned long pfn,
 
 	/* pages were reserved and not allocated */
 	clear_page_tag_ref(page);
+	__gather_extra_latent_entropy(page, 1 << order);
 	__free_pages_core(page, order, MEMINIT_EARLY);
 }
 
