@@ -2004,6 +2004,7 @@ config MODULE_SIG
 
 config MODULE_SIG_FORCE
 	bool "Require modules to be validly signed"
+	default y
 	depends on MODULE_SIG
 	help
 	  Reject unsigned modules or signed modules for which we don't have a
