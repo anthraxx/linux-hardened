@@ -622,9 +622,13 @@ static inline struct kmem_cache *virt_to_cache(const void *obj)
 	struct slab *slab;
 
 	slab = virt_to_slab(obj);
+#ifdef CONFIG_BUG_ON_DATA_CORRUPTION
+	BUG_ON(!slab);
+#else
 	if (WARN_ONCE(!slab, "%s: Object is not a Slab page!\n",
 					__func__))
 		return NULL;
+#endif
 	return slab->slab_cache;
 }
 
