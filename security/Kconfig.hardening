@@ -240,6 +240,7 @@ config INIT_ON_ALLOC_DEFAULT_ON
 
 config INIT_ON_FREE_DEFAULT_ON
 	bool "Enable heap memory zeroing on free by default"
+	default yes
 	depends on !KMSAN
 	help
 	  This has the effect of setting "init_on_free=1" on the kernel
