@@ -1795,6 +1795,8 @@ static __always_inline bool slab_free_hook(struct kmem_cache *s,
 		rsize = (s->flags & SLAB_RED_ZONE) ? s->red_left_pad : 0;
 		memset((char *)kasan_reset_tag(x) + s->inuse, 0,
 		       s->size - s->inuse - rsize);
+		if (s->ctor)
+			s->ctor(x);
 	}
 	/* KASAN might put x into memory quarantine, delaying its reuse. */
 	return kasan_slab_free(s, x, init);
@@ -1835,6 +1837,22 @@ static inline bool slab_free_freelist_hook(struct kmem_cache *s,
 			 * accordingly if object's reuse is delayed.
 			 */
 			--(*cnt);
+
+			/* Objects that are put into quarantine by KASAN will
+			 * still undergo free_consistency_checks(), which
+			 * checks whether the freelist pointer is valid if it
+			 * is located after the object (see check_object()).
+			 * Since this is the case for slab caches with
+			 * constructors, we need to fix the freelist pointer
+			 * after init_on_free has overwritten it.
+			 *
+			 * Note that doing this for all caches (not just ctor
+			 * ones) would cause a GPF due to KASAN poisoning and
+			 * the way set_freepointer() eventually dereferences
+			 * the freepointer.
+			 */
+			if (slab_want_init_on_free(s) && s->ctor)
+				set_freepointer(s, object, NULL);
 		}
 	} while (object != old_tail);
 
