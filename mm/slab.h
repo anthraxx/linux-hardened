@@ -694,9 +694,15 @@ static inline bool slab_want_init_on_alloc(gfp_t flags, struct kmem_cache *c)
 
 static inline bool slab_want_init_on_free(struct kmem_cache *c)
 {
-	if (static_branch_unlikely(&init_on_free))
-		return !(c->ctor ||
-			 (c->flags & (SLAB_TYPESAFE_BY_RCU | SLAB_POISON)));
+	if (static_branch_unlikely(&init_on_free)) {
+#ifndef CONFIG_SLUB
+		if (c->ctor)
+			return false;
+#endif
+		if (c->flags & (SLAB_TYPESAFE_BY_RCU | SLAB_POISON))
+			return false;
+		return true;
+	}
 	return false;
 }
 
