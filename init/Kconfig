@@ -1761,6 +1761,23 @@ config USERFAULTFD
 	  Enable the userfaultfd() system call that allows to intercept and
 	  handle page faults in userland.
 
+config USERFAULTFD_UNPRIVILEGED
+	bool "Allow unprivileged users to use the userfaultfd syscall"
+	depends on USERFAULTFD
+	default n
+	help
+	  When disabled, unprivileged users will not be able to use the userfaultfd
+	  syscall. Userfaultfd provide attackers with a way to stall a kernel
+	  thread in the middle of memory accesses from userspace by initiating an
+	  access on an unmapped page. To avoid various heap grooming and heap
+	  spraying techniques for exploiting use-after-free flaws this should be
+	  disabled by default.
+
+	  This setting can be overridden at runtime via the
+	  vm.unprivileged_userfaultfd sysctl.
+
+	  If unsure, say N.
+
 config ARCH_HAS_MEMBARRIER_CALLBACKS
 	bool
 
