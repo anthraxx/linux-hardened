@@ -1476,45 +1476,6 @@ static inline bool slab_free_freelist_hook(struct kmem_cache *s,
 	void *old_tail = *tail ? *tail : *head;
 	int rsize;
 
-	if (IS_ENABLED(CONFIG_SLAB_CANARY) || slab_want_init_on_free(s)) {
-		void *p = NULL;
-
-		do {
-			object = next;
-			next = get_freepointer(s, object);
-			check_canary(s, object, s->random_active);
-
-			if (slab_want_init_on_free(s)) {
-				/*
-				 * Clear the object and the metadata, but don't touch
-				 * the redzone.
-				 */
-				memset(object, 0, s->object_size);
-				rsize = (s->flags & SLAB_RED_ZONE) ? s->red_left_pad
-								   : 0;
-				memset((char *)object + s->inuse, 0,
-				       s->size - s->inuse - rsize);
-				if (!IS_ENABLED(CONFIG_SLAB_SANITIZE_VERIFY) && s->ctor)
-					s->ctor(object);
-				set_freepointer(s, object, p);
-				p = object;
-			}
-
-			set_canary(s, object, s->random_inactive);
-		} while (object != old_tail);
-	}
-
-/*
- * Compiler cannot detect this function can be removed if slab_free_hook()
- * evaluates to nothing.  Thus, catch all relevant config debug options here.
- */
-#if defined(CONFIG_LOCKDEP)	||		\
-	defined(CONFIG_DEBUG_KMEMLEAK) ||	\
-	defined(CONFIG_DEBUG_OBJECTS_FREE) ||	\
-	defined(CONFIG_KASAN)
-
-	next = *head;
-
 	/* Head and tail of the reconstructed freelist */
 	*head = NULL;
 	*tail = NULL;
@@ -1522,6 +1483,23 @@ static inline bool slab_free_freelist_hook(struct kmem_cache *s,
 	do {
 		object = next;
 		next = get_freepointer(s, object);
+		check_canary(s, object, s->random_active);
+
+		if (slab_want_init_on_free(s)) {
+			/*
+			 * Clear the object and the metadata, but don't touch
+			 * the redzone.
+			 */
+			memset(object, 0, s->object_size);
+			rsize = (s->flags & SLAB_RED_ZONE) ? s->red_left_pad
+							   : 0;
+			memset((char *)object + s->inuse, 0,
+			       s->size - s->inuse - rsize);
+			if (!IS_ENABLED(CONFIG_SLAB_SANITIZE_VERIFY) && s->ctor)
+				s->ctor(object);
+		}
+		set_canary(s, object, s->random_inactive);
+
 		/* If object's reuse doesn't have to be delayed */
 		if (!slab_free_hook(s, object)) {
 			/* Move object to the new freelist */
@@ -1536,9 +1514,6 @@ static inline bool slab_free_freelist_hook(struct kmem_cache *s,
 		*tail = NULL;
 
 	return *head != NULL;
-#else
-	return true;
-#endif
 }
 
 static void *setup_object(struct kmem_cache *s, struct page *page,
