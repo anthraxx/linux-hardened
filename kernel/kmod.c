@@ -149,6 +149,13 @@ int __request_module(bool wait, const char *fmt, ...)
 	if (ret)
 		return ret;
 
+#ifdef CONFIG_SECURITY_MODHARDEN
+	if (uid_eq(current_uid(), GLOBAL_ROOT_UID)) {
+		printk(KERN_ALERT "denied attempt to auto-load module %s\n", module_name);
+		return -EPERM;
+	}
+#endif
+
 	if (atomic_dec_if_positive(&kmod_concurrent_max) < 0) {
 		pr_warn_ratelimited("request_module: kmod_concurrent_max (%u) close to 0 (max_modprobes: %u), for module %s, throttling...",
 				    atomic_read(&kmod_concurrent_max),

@@ -42,6 +42,28 @@ config SECURITY_TIOCSTI_RESTRICT
 
 	  If you are unsure how to answer this question, answer N.
 
+config SECURITY_MODHARDEN
+	bool "Harden module auto-loading"
+	default y
+	depends on MODULES
+	help
+	  If you say Y here, module auto-loading in response to use of some
+	  feature implemented by an unloaded module will be restricted to
+	  root users. Enabling this option helps defend against attacks
+	  by unprivileged users who abuse the auto-loading behavior to
+	  cause a vulnerable module to load that is then exploited.
+
+	  If this option prevents a legitimate use of auto-loading for a
+	  non-root user, the administrator can execute modprobe manually
+	  with the exact name of the module mentioned in the alert log.
+	  Alternatively, the administrator can add the module to the list
+	  of modules loaded at boot by modifying init scripts.
+
+	  Modification of init scripts will most likely be needed on
+	  Ubuntu servers with encrypted home directory support enabled,
+	  as the first non-root user logging in will cause the ecb(aes),
+	  ecb(aes)-all, cbc(aes), and cbc(aes)-all  modules to be loaded.
+
 config SECURITY
 	bool "Enable different security models"
 	depends on SYSFS
