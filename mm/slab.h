@@ -746,6 +746,8 @@ static inline void slab_post_alloc_hook(struct kmem_cache *s,
 		p[i] = kasan_slab_alloc(s, p[i], flags, init);
 		if (p[i] && init && !kasan_has_integrated_init())
 			memset(p[i], 0, s->object_size);
+		if (p[i] && init && s->ctor)
+			s->ctor(p[i]);
 		kmemleak_alloc_recursive(p[i], s->object_size, 1,
 					 s->flags, flags);
 		kmsan_slab_alloc(s, p[i], flags);
@@ -830,8 +832,10 @@ static inline bool slab_want_init_on_alloc(gfp_t flags, struct kmem_cache *c)
 {
 	if (static_branch_maybe(CONFIG_INIT_ON_ALLOC_DEFAULT_ON,
 				&init_on_alloc)) {
+#ifndef CONFIG_SLUB
 		if (c->ctor)
 			return false;
+#endif
 		if (c->flags & (SLAB_TYPESAFE_BY_RCU | SLAB_POISON))
 			return flags & __GFP_ZERO;
 		return true;
