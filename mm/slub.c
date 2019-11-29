@@ -2881,8 +2881,14 @@ redo:
 		if (s->ctor)
 			s->ctor(object);
 		kasan_poison_object_data(s, object);
-	} else if (unlikely(slab_want_init_on_alloc(gfpflags, s)) && object)
+	} else if (unlikely(slab_want_init_on_alloc(gfpflags, s)) && object) {
 		memset(object, 0, s->object_size);
+		if (s->ctor) {
+			kasan_unpoison_object_data(s, object);
+			s->ctor(object);
+			kasan_poison_object_data(s, object);
+		}
+	}
 
 	if (object) {
 		check_canary(s, object, s->random_inactive);
@@ -3337,8 +3343,14 @@ int kmem_cache_alloc_bulk(struct kmem_cache *s, gfp_t flags, size_t size,
 	} else if (unlikely(slab_want_init_on_alloc(flags, s))) {
 		int j;
 
-		for (j = 0; j < i; j++)
+		for (j = 0; j < i; j++) {
 			memset(p[j], 0, s->object_size);
+			if (s->ctor) {
+				kasan_unpoison_object_data(s, p[j]);
+				s->ctor(p[j]);
+				kasan_poison_object_data(s, p[j]);
+			}
+		}
 	}
 
 	for (k = 0; k < i; k++) {
