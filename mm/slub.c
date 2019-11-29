@@ -4617,6 +4617,9 @@ bool slab_post_alloc_hook(struct kmem_cache *s, gfp_t flags, size_t size,
 		if (init && p[i] && !is_kfence_address(p[i]))
 			memset(p[i], 0, zero_size);
 
+		if (p[i] && init && s->ctor)
+			s->ctor(p[i]);
+
 		if (alloc_flags_allow_spinning(ac->alloc_flags))
 			kmemleak_alloc_recursive(p[i], s->object_size, 1,
 						 s->flags, init_flags);
