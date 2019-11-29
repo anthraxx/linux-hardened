@@ -639,8 +639,10 @@ static inline bool slab_want_init_on_alloc(gfp_t flags, struct kmem_cache *c)
 {
 	if (static_branch_maybe(CONFIG_INIT_ON_ALLOC_DEFAULT_ON,
 				&init_on_alloc)) {
+#ifndef CONFIG_SLUB
 		if (c->ctor)
 			return false;
+#endif
 		if (c->flags & (SLAB_TYPESAFE_BY_RCU | SLAB_POISON))
 			return flags & __GFP_ZERO;
 		return true;
