@@ -150,7 +150,7 @@ int __request_module(bool wait, const char *fmt, ...)
 		return ret;
 
 #ifdef CONFIG_SECURITY_MODHARDEN
-	if (uid_eq(current_uid(), GLOBAL_ROOT_UID)) {
+	if (!capable(CAP_SYS_MODULE)) {
 		printk(KERN_ALERT "denied attempt to auto-load module %s\n", module_name);
 		return -EPERM;
 	}

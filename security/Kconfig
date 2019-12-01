@@ -49,7 +49,7 @@ config SECURITY_MODHARDEN
 	help
 	  If you say Y here, module auto-loading in response to use of some
 	  feature implemented by an unloaded module will be restricted to
-	  root users. Enabling this option helps defend against attacks
+	  CAP_SYS_MODULE. Enabling this option helps defend against attacks
 	  by unprivileged users who abuse the auto-loading behavior to
 	  cause a vulnerable module to load that is then exploited.
 
