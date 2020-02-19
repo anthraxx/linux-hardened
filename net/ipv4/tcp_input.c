@@ -81,6 +81,7 @@
 #include <net/busy_poll.h>
 #include <net/mptcp.h>
 
+int sysctl_tcp_random_isn __read_mostly = 0;
 int sysctl_tcp_max_orphans __read_mostly = NR_FILE;
 
 #define FLAG_DATA		0x01 /* Incoming frame contained data.		*/
