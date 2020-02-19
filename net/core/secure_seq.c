@@ -22,6 +22,7 @@
 
 static siphash_key_t net_secret __read_mostly;
 static siphash_key_t ts_secret __read_mostly;
+static siphash_key_t last_secret = {{0,0}};
 
 static __always_inline void net_secret_init(void)
 {
@@ -134,7 +135,26 @@ u32 secure_tcp_seq(__be32 saddr, __be32 daddr,
 		   __be16 sport, __be16 dport)
 {
 	u32 hash;
-
+	u32 temp;
+	
+ 	net_secret_init();
+	
+	if (sysctl_tcp_random_isn){
+		if (!last_secret.key[0] && !last_secret.key[1]){
+			memcpy(&last_secret,&net_secret,sizeof(last_secret));
+		}else{
+			temp = *((u32*)&(net_secret.key[0]));
+			temp >>= 8;
+			last_secret.key[0]+=temp;
+			temp = *((u32*)&(net_secret.key[1]));
+			temp >>= 8;
+			last_secret.key[1]+=temp;
+		}
+		hash = siphash_3u32((__force u32)saddr, (__force u32)daddr,
+			        (__force u32)sport << 16 | (__force u32)dport,
+			        &last_secret);
+		return hash;
+	}
 	net_secret_init();
 	hash = siphash_3u32((__force u32)saddr, (__force u32)daddr,
 			    (__force u32)sport << 16 | (__force u32)dport,
