@@ -483,6 +483,13 @@ static int proc_fib_multipath_hash_policy(struct ctl_table *table, int write,
 
 static struct ctl_table ipv4_table[] = {
 	{
+		.procname	= "tcp_random_isn",
+		.data		= &sysctl_tcp_random_isn,
+		.maxlen		= sizeof(int),
+		.mode		= 0644,
+		.proc_handler	= proc_dointvec
+	},
+	{
 		.procname	= "tcp_max_orphans",
 		.data		= &sysctl_tcp_max_orphans,
 		.maxlen		= sizeof(int),
