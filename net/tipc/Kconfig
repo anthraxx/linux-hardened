@@ -5,6 +5,7 @@
 
 menuconfig TIPC
 	tristate "The TIPC Protocol"
+	default n
 	depends on INET
 	---help---
 	  The Transparent Inter Process Communication (TIPC) protocol is
