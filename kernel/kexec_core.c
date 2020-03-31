@@ -934,7 +934,7 @@ int kimage_load_segment(struct kimage *image,
 
 struct kimage *kexec_image;
 struct kimage *kexec_crash_image;
-int kexec_load_disabled;
+int kexec_load_disabled = 1;
 
 /*
  * No panic_cpu check version of crash_kexec().  This function is called
