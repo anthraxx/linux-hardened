@@ -5,6 +5,7 @@
 
 menuconfig IP_SCTP
 	tristate "The SCTP Protocol"
+	default n
 	depends on INET
 	depends on IPV6 || IPV6=n
 	select CRYPTO
