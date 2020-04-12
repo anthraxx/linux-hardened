@@ -1308,6 +1308,9 @@ static inline int perf_allow_open(struct perf_event_attr *attr)
 	if (sysctl_perf_event_paranoid > 2 && !capable(CAP_SYS_ADMIN))
 		return -EACCES;
 
+	if (sysctl_perf_event_paranoid > 3)
+		return -EACCES;
+
 	return security_perf_event_open(attr, PERF_SECURITY_OPEN);
 }
 

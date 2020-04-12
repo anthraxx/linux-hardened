@@ -401,6 +401,7 @@ static cpumask_var_t perf_online_mask;
  *   1 - disallow cpu events for unpriv
  *   2 - disallow kernel profiling for unpriv
  *   3 - disallow all unpriv perf event use
+ *   4 - disallow all perf event use
  */
 #ifdef CONFIG_SECURITY_PERF_EVENTS_RESTRICT
 int sysctl_perf_event_paranoid __read_mostly = 3;
