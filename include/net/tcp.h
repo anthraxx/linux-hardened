@@ -267,6 +267,7 @@ extern int sysctl_tcp_thin_linear_timeouts;
 extern int sysctl_tcp_thin_dupack;
 extern int sysctl_tcp_early_retrans;
 extern int sysctl_tcp_recovery;
+extern int sysctl_tcp_simult_connect;
 #define TCP_RACK_LOSS_DETECTION  0x1 /* Use RACK to detect losses */
 
 extern int sysctl_tcp_limit_output_bytes;
