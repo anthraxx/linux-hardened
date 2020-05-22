@@ -8,6 +8,8 @@
 #include <uapi/linux/ipc.h>
 #include <linux/refcount.h>
 
+extern int harden_ipc;
+
 /* used by in-kernel data structures */
 struct kern_ipc_perm {
 	spinlock_t	lock;

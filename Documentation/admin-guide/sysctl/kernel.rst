@@ -218,6 +218,29 @@ The kernel config option ``CONFIG_SECURITY_DMESG_RESTRICT`` sets the
 default value of ``dmesg_restrict``.
 
 
+harden_ipc
+==========
+
+This toggle indicates whether access to overly-permissive IPC objects
+is disallowed.
+
+If harden_ipc is set to (0), there are no restrictions. If harden_ipc
+is set to (1), access to overly-permissive IPC objects (shared
+memory, message queues, and semaphores) will be denied for processes
+given the following criteria beyond normal permission checks:
+1) If the IPC object is world-accessible and the euid doesn't match
+   that of the creator or current uid for the IPC object
+2) If the IPC object is group-accessible and the egid doesn't
+   match that of the creator or current gid for the IPC object
+It's a common error to grant too much permission to these objects,
+with impact ranging from denial of service and information leaking to
+privilege escalation. This feature was developed in response to
+research by Tim Brown:
+http://labs.portcullis.co.uk/whitepapers/memory-squatting-attacks-on-system-v-shared-memory/
+who found hundreds of such insecure usages. Processes with
+CAP_IPC_OWNER are still permitted to access these IPC objects.
+
+
 domainname & hostname
 =====================
 

@@ -42,6 +42,31 @@ config SECURITY_TIOCSTI_RESTRICT
 
 	  If you are unsure how to answer this question, answer N.
 
+config SECURITY_HARDEN_IPC
+	bool "Disallow access to overly-permissive IPC objects"
+	default y
+	depends on SYSVIPC
+	help
+	  If you say Y here, access to overly-permissive IPC objects (shared
+	  memory, message queues, and semaphores) will be denied for processes
+	  given the following criteria beyond normal permission checks:
+	  1) If the IPC object is world-accessible and the euid doesn't match
+	     that of the creator or current uid for the IPC object
+	  2) If the IPC object is group-accessible and the egid doesn't
+	     match that of the creator or current gid for the IPC object
+	  It's a common error to grant too much permission to these objects,
+	  with impact ranging from denial of service and information leaking to
+	  privilege escalation.  This feature was developed in response to
+	  research by Tim Brown:
+	  http://labs.portcullis.co.uk/whitepapers/memory-squatting-attacks-on-system-v-shared-memory/
+	  who found hundreds of such insecure usages. Processes with
+	  CAP_IPC_OWNER are still permitted to access these IPC objects.
+
+	  This setting can be overridden at runtime via the kernel.harden_ipc
+	  sysctl.
+
+	  If unsure, say Y.
+
 config SECURITY
 	bool "Enable different security models"
 	depends on SYSFS
