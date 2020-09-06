@@ -12,6 +12,7 @@ usbcore-$(CONFIG_OF)		+= of.o
 usbcore-$(CONFIG_USB_XHCI_SIDEBAND)	+= offload.o
 usbcore-$(CONFIG_USB_PCI)		+= hcd-pci.o
 usbcore-$(CONFIG_ACPI)		+= usb-acpi.o
+usbcore-$(CONFIG_SYSCTL)		+= sysctl.o
 
 ifdef CONFIG_USB_ONBOARD_DEV
 usbcore-y			+= ../misc/onboard_usb_dev_pdevs.o
