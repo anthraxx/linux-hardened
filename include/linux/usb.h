@@ -2029,8 +2029,16 @@ extern void usb_led_activity(enum usb_led_event ev);
 static inline void usb_led_activity(enum usb_led_event ev) {}
 #endif
 
-/* sysctl */
+/* sysctl.c */
 extern int deny_new_usb;
+#ifdef CONFIG_SYSCTL
+extern int usb_init_sysctl(void);
+extern void usb_exit_sysctl(void);
+#else
+static inline int usb_init_sysctl(void) { return 0; }
+static inline void usb_exit_sysctl(void) { }
+#endif /* CONFIG_SYSCTL */
+
 
 #endif  /* __KERNEL__ */
 
