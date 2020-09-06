@@ -5177,9 +5177,6 @@ static int descriptors_changed(struct usb_device *udev,
 	return changed;
 }
 
-/* sysctl */
-int deny_new_usb __read_mostly = 0;
-
 static void hub_port_connect(struct usb_hub *hub, int port1, u16 portstatus,
 		u16 portchange)
 {
