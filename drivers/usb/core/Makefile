@@ -11,6 +11,7 @@ usbcore-y += phy.o port.o
 usbcore-$(CONFIG_OF)		+= of.o
 usbcore-$(CONFIG_USB_PCI)		+= hcd-pci.o
 usbcore-$(CONFIG_ACPI)		+= usb-acpi.o
+usbcore-$(CONFIG_SYSCTL)		+= sysctl.o
 
 obj-$(CONFIG_USB)		+= usbcore.o
 
