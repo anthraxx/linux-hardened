@@ -8,8 +8,15 @@
 #define USB_MAJOR			180
 #define USB_DEVICE_MAJOR		189
 
-/* sysctl */
+/* sysctl.c */
 extern int deny_new_usb;
+#ifdef CONFIG_SYSCTL
+extern int usb_init_sysctl(void);
+extern void usb_exit_sysctl(void);
+#else
+static inline int usb_init_sysctl(void) { return 0; }
+static inline void usb_exit_sysctl(void) { }
+#endif /* CONFIG_SYSCTL */
 
 
 #ifdef __KERNEL__
