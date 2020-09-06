@@ -86,6 +86,8 @@ int proc_dointvec(const struct ctl_table *ctl, int dir, void *buf, size_t *lenp,
 		  loff_t *ppos);
 int proc_dointvec_minmax(const struct ctl_table *ctl, int dir, void *buf,
 			 size_t *lenp, loff_t *ppos);
+int proc_dointvec_minmax_sysadmin(const struct ctl_table *ctl, int dir, void *buf,
+				size_t *lenp, loff_t *ppos);
 int proc_douintvec(const struct ctl_table *ctl, int dir, void *buf, size_t *lenp,
 		   loff_t *ppos);
 int proc_douintvec_minmax(const struct ctl_table *ctl, int dir, void *buf,
