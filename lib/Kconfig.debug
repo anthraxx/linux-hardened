@@ -643,7 +643,7 @@ config DEBUG_FS
 choice
 	prompt "Debugfs default access"
 	depends on DEBUG_FS
-	default DEBUG_FS_ALLOW_ALL
+	default DEBUG_FS_ALLOW_NONE
 	help
 	  This selects the default access restrictions for debugfs.
 	  It can be overridden with kernel command line option
