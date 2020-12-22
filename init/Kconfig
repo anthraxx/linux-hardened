@@ -1526,13 +1526,12 @@ config SGETMASK_SYSCALL
 
 config SYSFS_SYSCALL
 	bool "Sysfs syscall support"
-	default y
 	help
 	  sys_sysfs is an obsolete system call no longer supported in libc.
 	  Note that disabling this option is more secure but might break
 	  compatibility with some systems.
 
-	  If unsure say Y here.
+	  If unsure say N here.
 
 config FHANDLE
 	bool "open by fhandle syscalls" if EXPERT
