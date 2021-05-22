@@ -460,4 +460,8 @@ int ab8500_fg_inst_curr_finalize(struct ab8500_fg *di, int *res);
 int ab8500_fg_inst_curr_started(struct ab8500_fg *di);
 int ab8500_fg_inst_curr_done(struct ab8500_fg *di);
 
+extern struct platform_driver ab8500_fg_driver;
+extern struct platform_driver ab8500_btemp_driver;
+extern struct platform_driver abx500_chargalg_driver;
+
 #endif /* _AB8500_CHARGER_H_ */
