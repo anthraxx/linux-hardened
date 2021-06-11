@@ -48,6 +48,7 @@ Currently, these files are in /proc/sys/fs:
 - suid_dumpable
 - super-max
 - super-nr
+- sysfs_restrict
 
 
 aio-nr & aio-max-nr
@@ -270,6 +271,31 @@ a sticky world-writable directory, or when the uid of the symlink and
 follower match, or when the directory owner matches the symlink's owner.
 
 This protection is based on the restrictions in Openwall and grsecurity.
+
+
+sysfs_restrict
+--------------
+
+This toggle controls the permissions of sysfs (the pseudo-filesystem
+mounted at /sys).
+
+When sysfs_restrict is set to (0), there are no restrictions and
+unprivileged users are permitted to access sysfs. When sysfs_restrict
+is set to (1), sysfs and any filesystem normally mounted under
+it (e.g. debugfs) will be accessible only by root.
+
+These filesystems generally provide access to hardware and debug information
+that isn't appropriate for unprivileged users of the system. Sysfs and
+debugfs have also become a large source of new vulnerabilities, ranging
+from infoleaks to local compromise. There has been very little oversight with
+an eye toward security involved in adding new exporters of information to these
+filesystems, so their use is discouraged.
+
+This is disabled by default as many programs (e.g. Xorg or debugging tools)
+require access to sysfs/debugfs.
+
+The kernel config option CONFIG_SECURITY_SYSFS_RESTRICT sets the default value
+of sysfs_restrict.
 
 
 suid_dumpable:

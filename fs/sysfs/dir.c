@@ -32,6 +32,8 @@ void sysfs_warn_dup(struct kernfs_node *parent, const char *name)
 	kfree(buf);
 }
 
+int sysfs_restrict = IS_ENABLED(CONFIG_SECURITY_SYSFS_RESTRICT);
+
 /**
  * sysfs_create_dir_ns - create a directory for an object with a namespace tag
  * @kobj: object we're creating directory for
@@ -40,6 +42,7 @@ void sysfs_warn_dup(struct kernfs_node *parent, const char *name)
 int sysfs_create_dir_ns(struct kobject *kobj, const void *ns)
 {
 	struct kernfs_node *parent, *kn;
+	umode_t *mode = S_IRWXU;
 	kuid_t uid;
 	kgid_t gid;
 
@@ -56,8 +59,11 @@ int sysfs_create_dir_ns(struct kobject *kobj, const void *ns)
 
 	kobject_get_ownership(kobj, &uid, &gid);
 
+	if (!sysfs_restrict)
+		mode = S_IRWXU | S_IRUGO | S_IXUGO;
+
 	kn = kernfs_create_dir_ns(parent, kobject_name(kobj),
-				  S_IRWXU | S_IRUGO | S_IXUGO, uid, gid,
+				  mode, uid, gid,
 				  kobj, ns);
 	if (IS_ERR(kn)) {
 		if (PTR_ERR(kn) == -EEXIST)

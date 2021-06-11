@@ -42,6 +42,29 @@ config SECURITY_TIOCSTI_RESTRICT
 
 	  If you are unsure how to answer this question, answer N.
 
+config SECURITY_SYSFS_RESTRICT
+	bool "Sysfs/debugfs restriction"
+	default n
+	depends on SYSFS
+	help
+	  If you say Y here, sysfs (the pseudo-filesystem mounted at /sys) and
+	  any filesystem normally mounted under it (e.g. debugfs) will be
+	  accessible only by root. These filesystems generally provide access
+	  to hardware and debug information that isn't appropriate for unprivileged
+	  users of the system. Sysfs and debugfs have also become a large source
+	  of new vulnerabilities, ranging from infoleaks to local compromise.
+	  There has been very little oversight with an eye toward security involved
+	  in adding new exporters of information to these filesystems, so their
+	  use is discouraged.
+
+	  This is disabled by default as many programs (e.g. Xorg or debugging tools)
+	  require access to sysfs/debugfs.
+
+	  This setting can be overridden at runtime via the
+	  fs.sysfs_restrict sysctl.
+
+	  If unsure say N.
+
 config SECURITY
 	bool "Enable different security models"
 	depends on SYSFS

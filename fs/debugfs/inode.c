@@ -27,6 +27,7 @@
 #include <linux/magic.h>
 #include <linux/slab.h>
 #include <linux/security.h>
+#include <linux/sysfs.h>
 
 #include "internal.h"
 
@@ -569,7 +570,10 @@ struct dentry *debugfs_create_dir(const char *name, struct dentry *parent)
 		return failed_creating(dentry);
 	}
 
-	inode->i_mode = S_IFDIR | S_IRWXU | S_IRUGO | S_IXUGO;
+	inode->i_mode = S_IRWXU;
+	if (!sysfs_restrict)
+		inode->i_mode = S_IFDIR | S_IRWXU | S_IRUGO | S_IXUGO;
+
 	inode->i_op = &debugfs_dir_inode_operations;
 	inode->i_fop = &simple_dir_operations;
 
