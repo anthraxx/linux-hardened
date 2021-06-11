@@ -22,6 +22,7 @@ extern char modprobe_path[]; /* for sysctl */
  * usually useless though. */
 extern __printf(2, 3)
 int __request_module(bool wait, const char *name, ...);
+extern int modharden;
 #define request_module(mod...) __request_module(true, mod)
 #define request_module_nowait(mod...) __request_module(false, mod)
 #define try_then_request_module(x, mod...) \

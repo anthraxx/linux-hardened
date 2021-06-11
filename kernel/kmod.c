@@ -105,6 +105,25 @@ out:
 	return -ENOMEM;
 }
 
+int modharden __read_mostly = IS_ENABLED(CONFIG_SECURITY_MODHARDEN);
+
+
+static int __init enable_modharden(char *level)
+{
+	if (!level)
+		return -EINVAL;
+
+	if (strcmp(level, "on") == 0)
+		modharden = 1;
+	else if (strcmp(level, "off") == 0)
+		modharden = 0;
+	else
+		return -EINVAL;
+
+	return 0;
+}
+early_param("modharden", enable_modharden);
+
 /**
  * __request_module - try to load a kernel module
  * @wait: wait (or not) for the operation to complete
@@ -147,6 +166,11 @@ int __request_module(bool wait, const char *fmt, ...)
 	ret = security_kernel_module_request(module_name);
 	if (ret)
 		return ret;
+
+	if (modharden && !capable(CAP_SYS_MODULE)) {
+		printk(KERN_ALERT "denied attempt to auto-load module %s\n", module_name);
+		return -EPERM;
+	}
 
 	if (atomic_dec_if_positive(&kmod_concurrent_max) < 0) {
 		pr_warn_ratelimited("request_module: kmod_concurrent_max (%u) close to 0 (max_modprobes: %u), for module %s, throttling...",

@@ -510,8 +510,22 @@ then the configured static usermode helper overrides this sysctl,
 except that the empty string is still accepted to completely disable
 module autoloading as described above.
 
-modules_disabled
-================
+modharden:
+==========
+
+This toggle indicates whether unprivileged users are allowed to
+auto-load kernel modules.
+
+When modharden is set to (0) there are no restrictions. When
+modharden is set to (1), only users with ``CAP_SYS_MODULE`` are
+permitted to load kernel modules
+
+The kernel config option ``CONFIG_SECURITY_MODHARDEN`` sets the
+default value of modharden.
+
+
+modules_disabled:
+=================
 
 A toggle value indicating if modules are allowed to be loaded
 in an otherwise modular kernel.  This toggle defaults to off
