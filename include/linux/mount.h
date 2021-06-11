@@ -120,4 +120,8 @@ extern bool path_is_mountpoint(const struct path *path);
 
 extern void kern_unmount_array(struct vfsmount *mnt[], unsigned int num);
 
+extern int enable_rofs;
+extern int handle_rofs_mount(struct dentry *dentry, struct vfsmount *mnt, int mnt_flags);
+extern int handle_rofs_blockwrite(struct dentry *dentry, struct vfsmount *mnt, int acc_mode);
+
 #endif /* _LINUX_MOUNT_H */

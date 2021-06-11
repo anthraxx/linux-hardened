@@ -3363,6 +3363,15 @@ static struct ctl_table fs_table[] = {
 		.extra2		= &two,
 	},
 	{
+		.procname	= "romount_protect",
+		.data		= &enable_rofs,
+		.maxlen		= sizeof(int),
+		.mode		= 0644,
+		.proc_handler	= proc_dointvec_minmax_sysadmin,
+		.extra1		= SYSCTL_ONE,
+		.extra2		= SYSCTL_ONE,
+	},
+	{
 		.procname	= "suid_dumpable",
 		.data		= &suid_dumpable,
 		.maxlen		= sizeof(int),

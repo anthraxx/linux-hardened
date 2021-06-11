@@ -2998,6 +2998,9 @@ static int may_open(struct user_namespace *mnt_userns, const struct path *path,
 	if (flag & O_NOATIME && !inode_owner_or_capable(mnt_userns, inode))
 		return -EPERM;
 
+	if (handle_rofs_blockwrite(dentry, path->mnt, acc_mode))
+		return -EPERM;
+
 	return 0;
 }
 

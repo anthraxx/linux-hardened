@@ -31,6 +31,7 @@
 #include <uapi/linux/mount.h>
 #include <linux/fs_context.h>
 #include <linux/shmem_fs.h>
+#include <linux/mount.h>
 
 #include "pnode.h"
 #include "internal.h"
@@ -3218,6 +3219,11 @@ int path_mount(const char *dev_name, struct path *path,
 			    SB_POSIXACL |
 			    SB_LAZYTIME |
 			    SB_I_VERSION);
+
+	if (handle_rofs_mount(path.dentry, path.mnt, mnt_flags)) {
+		retval = -EPERM;
+		goto dput_out;
+	}
 
 	if ((flags & (MS_REMOUNT | MS_BIND)) == (MS_REMOUNT | MS_BIND))
 		return do_reconfigure_mnt(path, mnt_flags);

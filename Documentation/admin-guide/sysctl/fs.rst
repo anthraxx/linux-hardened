@@ -45,6 +45,7 @@ Currently, these files are in /proc/sys/fs:
 - protected_hardlinks
 - protected_regular
 - protected_symlinks
+- romount_protect
 - suid_dumpable
 - super-max
 - super-nr
@@ -270,6 +271,23 @@ a sticky world-writable directory, or when the uid of the symlink and
 follower match, or when the directory owner matches the symlink's owner.
 
 This protection is based on the restrictions in Openwall and grsecurity.
+
+
+romount_protect
+---------------
+
+This toggle enables read-only mount protection.
+
+If romount_protect is set to (0), there are no protections.
+If romount_protect is set to (1), filesystems will be
+protected in the following ways:
+ * No new writable mounts will be allowed
+ * Existing read-only mounts won't be able to be remounted read/write
+ * Write operations will be denied on all block devices
+
+Once romount_protect is set to (1), it cannot be disabled.
+
+This feature is mainly intended for secure embedded systems.
 
 
 suid_dumpable:
