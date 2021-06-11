@@ -1831,6 +1831,11 @@ static int bprm_execve(struct linux_binprm *bprm,
 	if (retval)
 		goto out;
 
+	if (!tpe_allow(file)) {
+		retval = -EACCES;
+		goto out;
+	}
+
 	retval = exec_binprm(bprm);
 	if (retval < 0)
 		goto out;

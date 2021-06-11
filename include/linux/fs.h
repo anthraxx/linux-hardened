@@ -86,6 +86,12 @@ extern int sysctl_protected_hardlinks;
 extern int sysctl_protected_fifos;
 extern int sysctl_protected_regular;
 
+extern int tpe_allow(const struct file *file);
+extern int security_tpe;
+extern int security_tpe_all;
+extern int security_tpe_invert;
+extern kgid_t security_tpe_gid;
+
 typedef __kernel_rwf_t rwf_t;
 
 struct buffer_head;

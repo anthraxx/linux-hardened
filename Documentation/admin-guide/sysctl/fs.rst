@@ -48,6 +48,10 @@ Currently, these files are in /proc/sys/fs:
 - suid_dumpable
 - super-max
 - super-nr
+- tpe
+- tpe_restrict_all
+- tpe_invert
+- tpe_gid
 
 
 aio-nr & aio-max-nr
@@ -325,6 +329,60 @@ mount-max
 This denotes the maximum number of mounts that may exist
 in a mount namespace.
 
+
+tpe
+---
+
+This indicates whether Trusted Path Execution (TPE) is
+enabled.
+
+When tpe is set to (0), TPE is disabled. When tpe is set
+to (1), you will be able to choose a gid to add to the
+supplementary groups of users you want to mark as "untrusted."
+These users will not be able to execute any files that are not in
+root-owned directories writable only by root. This makes it far
+harder for attackers to execute their own code.
+
+The kernel config option CONFIG_SECURITY_TPE sets the
+default value of tpe.
+
+
+tpe_restrict_all
+----------------
+
+If tpe_restrict_all is enabled, all non-root users will be covered under
+a weaker TPE restriction. This is separate from, and in addition to,
+the main TPE options that you have selected elsewhere. Thus, if a
+"trusted" GID is chosen, this restriction applies to even that GID.
+Under this restriction, all non-root users will only be allowed to
+execute files in directories they own that are not group or
+world-writable, or in directories owned by root and writable only by
+root.
+
+The kernel config option CONFIG_SECURITY_TPE_ALL sets the
+default value of tpe_restrict_all.
+
+
+tpe_invert
+----------
+
+If tpe_invert is enabled, the group you specify in the TPE configuration will
+decide what group TPE restrictions will be *disabled* for. This
+option is useful if you want TPE restrictions to be applied to most
+users on the system.
+
+The kernel config option CONFIG_SECURITY_TPE_INVERT sets the
+default value of tpe_invert.
+
+
+tpe_gid
+-------
+
+Setting this GID determines what group TPE restrictions will be
+enabled or disabled for.
+
+The kernel config option CONFIG_SECURITY_TPE_GID sets the
+default value of tpe_gid.
 
 
 2. /proc/sys/fs/binfmt_misc
