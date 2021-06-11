@@ -12,22 +12,22 @@
 /*
  *	Values taken from NET/ROM documentation.
  */
-static int min_quality[] = {0}, max_quality[] = {255};
-static int min_obs[]     = {0}, max_obs[]     = {255};
-static int min_ttl[]     = {0}, max_ttl[]     = {255};
-static int min_t1[]      = {5 * HZ};
-static int max_t1[]      = {600 * HZ};
-static int min_n2[]      = {2}, max_n2[]      = {127};
-static int min_t2[]      = {1 * HZ};
-static int max_t2[]      = {60 * HZ};
-static int min_t4[]      = {1 * HZ};
-static int max_t4[]      = {1000 * HZ};
-static int min_window[]  = {1}, max_window[]  = {127};
-static int min_idle[]    = {0 * HZ};
-static int max_idle[]    = {65535 * HZ};
-static int min_route[]   = {0}, max_route[]   = {1};
-static int min_fails[]   = {1}, max_fails[]   = {10};
-static int min_reset[]   = {0}, max_reset[]   = {1};
+static int min_quality[] __read_only = {0}, max_quality[] __read_only = {255};
+static int min_obs[] __read_only     = {0}, max_obs[] __read_only     = {255};
+static int min_ttl[] __read_only     = {0}, max_ttl[] __read_only     = {255};
+static int min_t1[] __read_only      = {5 * HZ};
+static int max_t1[] __read_only      = {600 * HZ};
+static int min_n2[] __read_only      = {2}, max_n2[] __read_only      = {127};
+static int min_t2[] __read_only      = {1 * HZ};
+static int max_t2[] __read_only      = {60 * HZ};
+static int min_t4[] __read_only      = {1 * HZ};
+static int max_t4[] __read_only      = {1000 * HZ};
+static int min_window[] __read_only  = {1}, max_window[] __read_only  = {127};
+static int min_idle[] __read_only    = {0 * HZ};
+static int max_idle[] __read_only    = {65535 * HZ};
+static int min_route[] __read_only   = {0}, max_route[] __read_only   = {1};
+static int min_fails[] __read_only   = {1}, max_fails[] __read_only   = {10};
+static int min_reset[] __read_only   = {0}, max_reset[] __read_only   = {1};
 
 static struct ctl_table_header *nr_table_header;
 

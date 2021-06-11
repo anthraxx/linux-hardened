@@ -9,21 +9,21 @@
 #include <linux/spinlock.h>
 #include <net/ax25.h>
 
-static int min_ipdefmode[1],    	max_ipdefmode[] = {1};
-static int min_axdefmode[1],            max_axdefmode[] = {1};
-static int min_backoff[1],		max_backoff[] = {2};
-static int min_conmode[1],		max_conmode[] = {2};
-static int min_window[] = {1},		max_window[] = {7};
-static int min_ewindow[] = {1},		max_ewindow[] = {63};
-static int min_t1[] = {1},		max_t1[] = {30000};
-static int min_t2[] = {1},		max_t2[] = {20000};
-static int min_t3[1],			max_t3[] = {3600000};
-static int min_idle[1],			max_idle[] = {65535000};
-static int min_n2[] = {1},		max_n2[] = {31};
-static int min_paclen[] = {1},		max_paclen[] = {512};
-static int min_proto[1],		max_proto[] = { AX25_PROTO_MAX };
+static int min_ipdefmode[1],    	max_ipdefmode[] __read_only = {1};
+static int min_axdefmode[1],            max_axdefmode[] __read_only = {1};
+static int min_backoff[1],		max_backoff[] __read_only = {2};
+static int min_conmode[1],		max_conmode[] __read_only = {2};
+static int min_window[] __read_only = {1},		max_window[] __read_only = {7};
+static int min_ewindow[] __read_only = {1},		max_ewindow[] __read_only = {63};
+static int min_t1[] __read_only = {1},		max_t1[] __read_only = {30000};
+static int min_t2[] __read_only = {1},		max_t2[] __read_only = {20000};
+static int min_t3[1],			max_t3[] __read_only = {3600000};
+static int min_idle[1],			max_idle[] __read_only = {65535000};
+static int min_n2[] __read_only = {1},		max_n2[] __read_only = {31};
+static int min_paclen[] __read_only = {1},		max_paclen[] __read_only = {512};
+static int min_proto[1],		max_proto[] __read_only = { AX25_PROTO_MAX };
 #ifdef CONFIG_AX25_DAMA_SLAVE
-static int min_ds_timeout[1],		max_ds_timeout[] = {65535000};
+static int min_ds_timeout[1],		max_ds_timeout[] __read_only = {65535000};
 #endif
 
 static const struct ctl_table ax25_param_table[] = {

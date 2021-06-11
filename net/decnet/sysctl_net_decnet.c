@@ -45,14 +45,14 @@ int sysctl_decnet_rmem[3] = { 4 * 1024, 87380, 87380 * 2 };
 
 #ifdef CONFIG_SYSCTL
 extern int decnet_dst_gc_interval;
-static int min_decnet_time_wait[] = { 5 };
-static int max_decnet_time_wait[] = { 600 };
-static int min_state_count[] = { 1 };
-static int max_state_count[] = { NSP_MAXRXTSHIFT };
-static int min_decnet_dst_gc_interval[] = { 1 };
-static int max_decnet_dst_gc_interval[] = { 60 };
-static int min_decnet_no_fc_max_cwnd[] = { NSP_MIN_WINDOW };
-static int max_decnet_no_fc_max_cwnd[] = { NSP_MAX_WINDOW };
+static int min_decnet_time_wait[] __read_only = { 5 };
+static int max_decnet_time_wait[] __read_only = { 600 };
+static int min_state_count[] __read_only = { 1 };
+static int max_state_count[] __read_only = { NSP_MAXRXTSHIFT };
+static int min_decnet_dst_gc_interval[] __read_only = { 1 };
+static int max_decnet_dst_gc_interval[] __read_only = { 60 };
+static int min_decnet_no_fc_max_cwnd[] __read_only = { NSP_MIN_WINDOW };
+static int max_decnet_no_fc_max_cwnd[] __read_only = { NSP_MAX_WINDOW };
 static char node_name[7] = "???";
 
 static struct ctl_table_header *dn_table_header = NULL;

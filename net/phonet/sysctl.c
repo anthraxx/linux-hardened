@@ -22,8 +22,8 @@
 #define DYNAMIC_PORT_MAX	0x7f
 
 static DEFINE_SEQLOCK(local_port_range_lock);
-static int local_port_range_min[2] = {0, 0};
-static int local_port_range_max[2] = {1023, 1023};
+static int local_port_range_min[2] __read_only = {0, 0};
+static int local_port_range_max[2] __read_only = {1023, 1023};
 static int local_port_range[2] = {DYNAMIC_PORT_MIN, DYNAMIC_PORT_MAX};
 static struct ctl_table_header *phonet_table_hrd;
 

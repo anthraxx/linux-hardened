@@ -9,15 +9,15 @@
 #include <net/ax25.h>
 #include <net/rose.h>
 
-static int min_timer[]  = {1 * HZ};
-static int max_timer[]  = {300 * HZ};
-static int min_idle[]   = {0 * HZ};
-static int max_idle[]   = {65535 * HZ};
-static int min_route[1],       max_route[] = {1};
-static int min_ftimer[] = {60 * HZ};
-static int max_ftimer[] = {600 * HZ};
-static int min_maxvcs[] = {1}, max_maxvcs[] = {254};
-static int min_window[] = {1}, max_window[] = {7};
+static int min_timer[] __read_only  = {1 * HZ};
+static int max_timer[] __read_only  = {300 * HZ};
+static int min_idle[] __read_only   = {0 * HZ};
+static int max_idle[] __read_only   = {65535 * HZ};
+static int min_route[1],       max_route[] __read_only = {1};
+static int min_ftimer[] __read_only = {60 * HZ};
+static int max_ftimer[] __read_only = {600 * HZ};
+static int min_maxvcs[] __read_only = {1}, max_maxvcs[] = {254};
+static int min_window[] __read_only = {1}, max_window[] = {7};
 
 static struct ctl_table_header *rose_table_header;
 

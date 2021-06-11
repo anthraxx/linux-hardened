@@ -13,8 +13,8 @@
 #include <linux/init.h>
 #include <net/x25.h>
 
-static int min_timer[] = {   1 * HZ };
-static int max_timer[] = { 300 * HZ };
+static int min_timer[] __read_only = {   1 * HZ };
+static int max_timer[] __read_only = { 300 * HZ };
 
 static struct ctl_table_header *x25_table_header;
 

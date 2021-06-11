@@ -9,8 +9,8 @@
 #define KUNIT_PROC_READ 0
 #define KUNIT_PROC_WRITE 1
 
-static int i_zero;
-static int i_one_hundred = 100;
+static int i_zero __read_only;
+static int i_one_hundred __read_only = 100;
 
 /*
  * Test that proc_dointvec will not try to use a NULL .data field even when the

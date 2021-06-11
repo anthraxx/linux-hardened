@@ -36,8 +36,8 @@
 #include <linux/delay.h>
 #include <linux/vmalloc.h>
 
-static int i_zero;
-static int i_one_hundred = 100;
+static int i_zero __read_only;
+static int i_one_hundred __read_only = 100;
 
 struct test_sysctl_data {
 	int int_0001;
