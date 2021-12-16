@@ -920,8 +920,12 @@ void free_large_kmalloc(struct folio *folio, void *object)
 {
 	unsigned int order = folio_order(folio);
 
+#ifdef CONFIG_BUG_ON_DATA_CORRUPTION
+	BUG_ON(order == 0);
+#else
 	if (WARN_ON_ONCE(order == 0))
 		pr_warn_once("object pointer: 0x%p\n", object);
+#endif
 
 	kmemleak_free(object);
 	kasan_kfree_large(object);
