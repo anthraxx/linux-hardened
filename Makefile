@@ -2,7 +2,7 @@
 VERSION = 6
 PATCHLEVEL = 1
 SUBLEVEL = 14
-EXTRAVERSION =
+EXTRAVERSION = -hardened1
 NAME = Hurr durr I'ma ninja sloth
 
 # *DOCUMENTATION*
