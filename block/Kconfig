@@ -216,11 +216,6 @@ config BLK_MQ_VIRTIO
 	depends on VIRTIO
 	default y
 
-config BLK_MQ_RDMA
-	bool
-	depends on INFINIBAND
-	default y
-
 config BLK_PM
 	def_bool PM
 
