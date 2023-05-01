@@ -150,7 +150,6 @@ config LEGACY_PTY_COUNT
 
 config LEGACY_TIOCSTI
 	bool "Allow legacy TIOCSTI usage"
-	default y
 	help
 	  Historically the kernel has allowed TIOCSTI, which will push
 	  characters into a controlling TTY. This continues to be used
