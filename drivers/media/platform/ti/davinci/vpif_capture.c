@@ -1643,6 +1643,7 @@ static int vpif_probe(struct platform_device *pdev)
 
 	pdev->dev.platform_data = vpif_capture_get_pdata(pdev);
 	if (!pdev->dev.platform_data) {
+		err = -EINVAL;
 		dev_warn(&pdev->dev, "Missing platform data. Giving up.\n");
 		goto vpif_unregister;
 	}
