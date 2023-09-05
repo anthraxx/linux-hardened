@@ -679,6 +679,7 @@ struct kvm_hypervisor_cpuid {
 	u32 limit;
 };
 
+#ifdef CONFIG_KVM_XEN
 /* Xen HVM per vcpu emulation context */
 struct kvm_vcpu_xen {
 	u64 hypercall_rip;
@@ -701,6 +702,7 @@ struct kvm_vcpu_xen {
 	struct timer_list poll_timer;
 	struct kvm_hypervisor_cpuid cpuid;
 };
+#endif
 
 struct kvm_queued_exception {
 	bool pending;
@@ -931,8 +933,9 @@ struct kvm_vcpu_arch {
 
 	bool hyperv_enabled;
 	struct kvm_vcpu_hv *hyperv;
+#ifdef CONFIG_KVM_XEN
 	struct kvm_vcpu_xen xen;
-
+#endif
 	cpumask_var_t wbinvd_dirty_mask;
 
 	unsigned long last_retry_eip;
