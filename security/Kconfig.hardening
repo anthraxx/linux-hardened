@@ -283,6 +283,7 @@ menu "Hardening of kernel data structures"
 
 config LIST_HARDENED
 	bool "Check integrity of linked list manipulation"
+	default y
 	help
 	  Minimal integrity checking in the linked-list manipulation routines
 	  to catch memory corruptions that are not guaranteed to result in an
