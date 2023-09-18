@@ -730,7 +730,9 @@ char *kstrdup_and_replace(const char *src, char old, char new, gfp_t gfp)
 	if (!dst)
 		return NULL;
 
-	return strreplace(dst, old, new);
+	strreplace(dst, old, new);
+
+	return dst;
 }
 EXPORT_SYMBOL_GPL(kstrdup_and_replace);
 
