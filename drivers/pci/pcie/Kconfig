@@ -45,6 +45,15 @@ config PCIEAER_INJECT
 	  gotten from:
 	     https://www.kernel.org/pub/linux/utils/pci/aer-inject/
 
+config PCIEAER_CXL
+	bool "PCI Express CXL RAS support"
+	default y
+	depends on PCIEAER && CXL_PCI
+	help
+	  Enables CXL error handling.
+
+	  If unsure, say Y.
+
 #
 # PCI Express ECRC
 #
