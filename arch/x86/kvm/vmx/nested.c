@@ -227,6 +227,7 @@ static void vmx_disable_shadow_vmcs(struct vcpu_vmx *vmx)
 
 static inline void nested_release_evmcs(struct kvm_vcpu *vcpu)
 {
+#ifdef CONFIG_KVM_HYPERV
 	struct kvm_vcpu_hv *hv_vcpu = to_hv_vcpu(vcpu);
 	struct vcpu_vmx *vmx = to_vmx(vcpu);
 
@@ -242,10 +243,12 @@ static inline void nested_release_evmcs(struct kvm_vcpu *vcpu)
 		hv_vcpu->nested.vm_id = 0;
 		hv_vcpu->nested.vp_id = 0;
 	}
+#endif
 }
 
 static bool nested_evmcs_handle_vmclear(struct kvm_vcpu *vcpu, gpa_t vmptr)
 {
+#ifdef CONFIG_KVM_HYPERV
 	struct vcpu_vmx *vmx = to_vmx(vcpu);
 	/*
 	 * When Enlightened VMEntry is enabled on the calling CPU we treat
@@ -265,6 +268,9 @@ static bool nested_evmcs_handle_vmclear(struct kvm_vcpu *vcpu, gpa_t vmptr)
 		nested_release_evmcs(vcpu);
 
 	return true;
+#else
+	return false;
+#endif
 }
 
 static void vmx_sync_vmcs_host_state(struct vcpu_vmx *vmx,
@@ -1615,6 +1621,7 @@ static void copy_vmcs12_to_shadow(struct vcpu_vmx *vmx)
 
 static void copy_enlightened_to_vmcs12(struct vcpu_vmx *vmx, u32 hv_clean_fields)
 {
+#ifdef CONFIG_KVM_HYPERV
 	struct vmcs12 *vmcs12 = vmx->nested.cached_vmcs12;
 	struct hv_enlightened_vmcs *evmcs = vmx->nested.hv_evmcs;
 	struct kvm_vcpu_hv *hv_vcpu = to_hv_vcpu(&vmx->vcpu);
@@ -1855,10 +1862,14 @@ static void copy_enlightened_to_vmcs12(struct vcpu_vmx *vmx, u32 hv_clean_fields
 	 */
 
 	return;
+#else /* CONFIG_KVM_HYPERV */
+	KVM_BUG_ON(1, vmx->vcpu.kvm);
+#endif /* CONFIG_KVM_HYPERV */
 }
 
 static void copy_vmcs12_to_enlightened(struct vcpu_vmx *vmx)
 {
+#ifdef CONFIG_KVM_HYPERV
 	struct vmcs12 *vmcs12 = vmx->nested.cached_vmcs12;
 	struct hv_enlightened_vmcs *evmcs = vmx->nested.hv_evmcs;
 
@@ -2029,6 +2040,9 @@ static void copy_vmcs12_to_enlightened(struct vcpu_vmx *vmx)
 	evmcs->guest_bndcfgs = vmcs12->guest_bndcfgs;
 
 	return;
+#else /* CONFIG_KVM_HYPERV */
+	KVM_BUG_ON(1, vmx->vcpu.kvm);
+#endif /* CONFIG_KVM_HYPERV */
 }
 
 /*
@@ -2038,6 +2052,7 @@ static void copy_vmcs12_to_enlightened(struct vcpu_vmx *vmx)
 static enum nested_evmptrld_status nested_vmx_handle_enlightened_vmptrld(
 	struct kvm_vcpu *vcpu, bool from_launch)
 {
+#ifdef CONFIG_KVM_HYPERV
 	struct vcpu_vmx *vmx = to_vmx(vcpu);
 	bool evmcs_gpa_changed = false;
 	u64 evmcs_gpa;
@@ -2119,6 +2134,9 @@ static enum nested_evmptrld_status nested_vmx_handle_enlightened_vmptrld(
 	}
 
 	return EVMPTRLD_SUCCEEDED;
+#else
+	return EVMPTRLD_DISABLED;
+#endif
 }
 
 void nested_sync_vmcs12_to_shadow(struct kvm_vcpu *vcpu)
@@ -2937,8 +2955,10 @@ static int nested_vmx_check_controls(struct kvm_vcpu *vcpu,
 	    nested_check_vm_entry_controls(vcpu, vmcs12))
 		return -EINVAL;
 
+#ifdef CONFIG_KVM_HYPERV
 	if (guest_cpuid_has_evmcs(vcpu))
 		return nested_evmcs_check_controls(vmcs12);
+#endif
 
 	return 0;
 }
@@ -3211,6 +3231,7 @@ static int nested_vmx_check_vmentry_hw(struct kvm_vcpu *vcpu)
 	return 0;
 }
 
+#ifdef CONFIG_KVM_HYPERV
 static bool nested_get_evmcs_page(struct kvm_vcpu *vcpu)
 {
 	struct vcpu_vmx *vmx = to_vmx(vcpu);
@@ -3238,6 +3259,7 @@ static bool nested_get_evmcs_page(struct kvm_vcpu *vcpu)
 
 	return true;
 }
+#endif
 
 static bool nested_get_vmcs12_pages(struct kvm_vcpu *vcpu)
 {
@@ -3325,6 +3347,7 @@ static bool nested_get_vmcs12_pages(struct kvm_vcpu *vcpu)
 
 static bool vmx_get_nested_state_pages(struct kvm_vcpu *vcpu)
 {
+#ifdef CONFIG_KVM_HYPERV
 	/*
 	 * Note: nested_get_evmcs_page() also updates 'vp_assist_page' copy
 	 * in 'struct kvm_vcpu_hv' in case eVMCS is in use, this is mandatory
@@ -3336,6 +3359,7 @@ static bool vmx_get_nested_state_pages(struct kvm_vcpu *vcpu)
 				     __func__);
 		return false;
 	}
+#endif
 
 	if (is_guest_mode(vcpu) && !nested_get_vmcs12_pages(vcpu))
 		return false;
@@ -4837,6 +4861,7 @@ void nested_vmx_vmexit(struct kvm_vcpu *vcpu, u32 vm_exit_reason,
 	/* trying to cancel vmlaunch/vmresume is a bug */
 	WARN_ON_ONCE(vmx->nested.nested_run_pending);
 
+#ifdef CONFIG_KVM_HYPERV
 	if (kvm_check_request(KVM_REQ_GET_NESTED_STATE_PAGES, vcpu)) {
 		/*
 		 * KVM_REQ_GET_NESTED_STATE_PAGES is also used to map
@@ -4846,6 +4871,7 @@ void nested_vmx_vmexit(struct kvm_vcpu *vcpu, u32 vm_exit_reason,
 		 */
 		(void)nested_get_evmcs_page(vcpu);
 	}
+#endif
 
 	/* Service pending TLB flush requests for L2 before switching to L1. */
 	kvm_service_local_tlb_flush_requests(vcpu);
@@ -6313,11 +6339,13 @@ static bool nested_vmx_l0_wants_exit(struct kvm_vcpu *vcpu,
 		 * Handle L2's bus locks in L0 directly.
 		 */
 		return true;
+#ifdef CONFIG_KVM_HYPERV
 	case EXIT_REASON_VMCALL:
 		/* Hyper-V L2 TLB flush hypercall is handled by L0 */
 		return guest_hv_cpuid_has_l2_tlb_flush(vcpu) &&
 			nested_evmcs_l2_tlb_flush_enabled(vcpu) &&
 			kvm_hv_is_tlb_flush_hcall(vcpu);
+#endif
 	default:
 		break;
 	}
@@ -7201,7 +7229,9 @@ struct kvm_x86_nested_ops vmx_nested_ops = {
 	.set_state = vmx_set_nested_state,
 	.get_nested_state_pages = vmx_get_nested_state_pages,
 	.write_log_dirty = nested_vmx_write_pml_buffer,
+#ifdef CONFIG_KVM_HYPERV
 	.enable_evmcs = nested_enable_evmcs,
 	.get_evmcs_version = nested_get_evmcs_version,
 	.hv_inject_synthetic_vmexit_post_tlb_flush = vmx_hv_inject_synthetic_vmexit_post_tlb_flush,
+#endif
 };
