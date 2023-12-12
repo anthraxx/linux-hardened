@@ -338,7 +338,7 @@ config SLUB_CPU_PARTIAL
 	  Typically one would choose no for a realtime system.
 
 config RANDOM_KMALLOC_CACHES
-	default n
+	default y
 	depends on SLUB && !SLUB_TINY
 	bool "Randomize slab caches for normal kmalloc"
 	help
