@@ -252,7 +252,7 @@ config SLUB_STATS
 config KMALLOC_PARTITION_CACHES
 	depends on !SLUB_TINY
 	bool "Partitioned slab caches for normal kmalloc"
-	default RANDOM_KMALLOC_CACHES
+	default y
 	help
 	  A hardening feature that creates multiple isolated copies of slab
 	  caches for normal kmalloc allocations. This makes it more difficult
