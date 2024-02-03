@@ -2433,7 +2433,6 @@ static bool stmmac_xdp_xmit_zc(struct stmmac_priv *priv, u32 queue, u32 budget)
 	struct xdp_desc xdp_desc;
 	bool work_done = true;
 	u32 tx_set_ic_bit = 0;
-	unsigned long flags;
 
 	/* Avoids TX time-out as we are sharing with slow path */
 	txq_trans_cond_update(nq);
@@ -2506,9 +2505,9 @@ static bool stmmac_xdp_xmit_zc(struct stmmac_priv *priv, u32 queue, u32 budget)
 		tx_q->cur_tx = STMMAC_NEXT_ENTRY(tx_q->cur_tx, priv->dma_conf.dma_tx_size);
 		entry = tx_q->cur_tx;
 	}
-	flags = u64_stats_update_begin_irqsave(&txq_stats->syncp);
-	txq_stats->tx_set_ic_bit += tx_set_ic_bit;
-	u64_stats_update_end_irqrestore(&txq_stats->syncp, flags);
+	u64_stats_update_begin(&txq_stats->napi_syncp);
+	u64_stats_add(&txq_stats->napi.tx_set_ic_bit, tx_set_ic_bit);
+	u64_stats_update_end(&txq_stats->napi_syncp);
 
 	if (tx_desc) {
 		stmmac_flush_tx_descriptors(priv, queue);
@@ -2552,7 +2551,6 @@ static int stmmac_tx_clean(struct stmmac_priv *priv, int budget, u32 queue)
 	unsigned int bytes_compl = 0, pkts_compl = 0;
 	unsigned int entry, xmits = 0, count = 0;
 	u32 tx_packets = 0, tx_errors = 0;
-	unsigned long flags;
 
 	__netif_tx_lock_bh(netdev_get_tx_queue(priv->dev, queue));
 
@@ -2708,11 +2706,11 @@ static int stmmac_tx_clean(struct stmmac_priv *priv, int budget, u32 queue)
 	if (tx_q->dirty_tx != tx_q->cur_tx)
 		stmmac_tx_timer_arm(priv, queue);
 
-	flags = u64_stats_update_begin_irqsave(&txq_stats->syncp);
-	txq_stats->tx_packets += tx_packets;
-	txq_stats->tx_pkt_n += tx_packets;
-	txq_stats->tx_clean++;
-	u64_stats_update_end_irqrestore(&txq_stats->syncp, flags);
+	u64_stats_update_begin(&txq_stats->napi_syncp);
+	u64_stats_add(&txq_stats->napi.tx_packets, tx_packets);
+	u64_stats_add(&txq_stats->napi.tx_pkt_n, tx_packets);
+	u64_stats_inc(&txq_stats->napi.tx_clean);
+	u64_stats_update_end(&txq_stats->napi_syncp);
 
 	priv->xstats.tx_errors += tx_errors;
 
@@ -4097,7 +4095,6 @@ static netdev_tx_t stmmac_tso_xmit(struct sk_buff *skb, struct net_device *dev)
 	bool has_vlan, set_ic;
 	dma_addr_t tso_des, des;
 	u8 proto_hdr_len, hdr;
-	unsigned long flags;
 	u32 pay_len, mss;
 	int i;
 
@@ -4276,13 +4273,13 @@ static netdev_tx_t stmmac_tso_xmit(struct sk_buff *skb, struct net_device *dev)
 		netif_tx_stop_queue(netdev_get_tx_queue(priv->dev, queue));
 	}
 
-	flags = u64_stats_update_begin_irqsave(&txq_stats->syncp);
-	txq_stats->tx_bytes += skb->len;
-	txq_stats->tx_tso_frames++;
-	txq_stats->tx_tso_nfrags += nfrags;
+	u64_stats_update_begin(&txq_stats->q_syncp);
+	u64_stats_add(&txq_stats->q.tx_bytes, skb->len);
+	u64_stats_inc(&txq_stats->q.tx_tso_frames);
+	u64_stats_add(&txq_stats->q.tx_tso_nfrags, nfrags);
 	if (set_ic)
-		txq_stats->tx_set_ic_bit++;
-	u64_stats_update_end_irqrestore(&txq_stats->syncp, flags);
+		u64_stats_inc(&txq_stats->q.tx_set_ic_bit);
+	u64_stats_update_end(&txq_stats->q_syncp);
 
 	if (priv->sarc_type)
 		stmmac_set_desc_sarc(priv, first, priv->sarc_type);
@@ -4381,7 +4378,6 @@ static netdev_tx_t stmmac_xmit(struct sk_buff *skb, struct net_device *dev)
 	struct stmmac_tx_queue *tx_q;
 	bool has_vlan, set_ic;
 	int entry, first_tx;
-	unsigned long flags;
 	dma_addr_t des;
 
 	tx_q = &priv->dma_conf.tx_queue[queue];
@@ -4550,11 +4546,11 @@ static netdev_tx_t stmmac_xmit(struct sk_buff *skb, struct net_device *dev)
 		netif_tx_stop_queue(netdev_get_tx_queue(priv->dev, queue));
 	}
 
-	flags = u64_stats_update_begin_irqsave(&txq_stats->syncp);
-	txq_stats->tx_bytes += skb->len;
+	u64_stats_update_begin(&txq_stats->q_syncp);
+	u64_stats_add(&txq_stats->q.tx_bytes, skb->len);
 	if (set_ic)
-		txq_stats->tx_set_ic_bit++;
-	u64_stats_update_end_irqrestore(&txq_stats->syncp, flags);
+		u64_stats_inc(&txq_stats->q.tx_set_ic_bit);
+	u64_stats_update_end(&txq_stats->q_syncp);
 
 	if (priv->sarc_type)
 		stmmac_set_desc_sarc(priv, first, priv->sarc_type);
@@ -4832,12 +4828,11 @@ static int stmmac_xdp_xmit_xdpf(struct stmmac_priv *priv, int queue,
 		set_ic = false;
 
 	if (set_ic) {
-		unsigned long flags;
 		tx_q->tx_count_frames = 0;
 		stmmac_set_tx_ic(priv, tx_desc);
-		flags = u64_stats_update_begin_irqsave(&txq_stats->syncp);
-		txq_stats->tx_set_ic_bit++;
-		u64_stats_update_end_irqrestore(&txq_stats->syncp, flags);
+		u64_stats_update_begin(&txq_stats->q_syncp);
+		u64_stats_inc(&txq_stats->q.tx_set_ic_bit);
+		u64_stats_update_end(&txq_stats->q_syncp);
 	}
 
 	stmmac_enable_dma_transmission(priv, priv->ioaddr);
@@ -4997,7 +4992,6 @@ static void stmmac_dispatch_skb_zc(struct stmmac_priv *priv, u32 queue,
 	unsigned int len = xdp->data_end - xdp->data;
 	enum pkt_hash_types hash_type;
 	int coe = priv->hw->rx_csum;
-	unsigned long flags;
 	struct sk_buff *skb;
 	u32 hash;
 
@@ -5022,10 +5016,10 @@ static void stmmac_dispatch_skb_zc(struct stmmac_priv *priv, u32 queue,
 	skb_record_rx_queue(skb, queue);
 	napi_gro_receive(&ch->rxtx_napi, skb);
 
-	flags = u64_stats_update_begin_irqsave(&rxq_stats->syncp);
-	rxq_stats->rx_pkt_n++;
-	rxq_stats->rx_bytes += len;
-	u64_stats_update_end_irqrestore(&rxq_stats->syncp, flags);
+	u64_stats_update_begin(&rxq_stats->napi_syncp);
+	u64_stats_inc(&rxq_stats->napi.rx_pkt_n);
+	u64_stats_add(&rxq_stats->napi.rx_bytes, len);
+	u64_stats_update_end(&rxq_stats->napi_syncp);
 }
 
 static bool stmmac_rx_refill_zc(struct stmmac_priv *priv, u32 queue, u32 budget)
@@ -5097,7 +5091,6 @@ static int stmmac_rx_zc(struct stmmac_priv *priv, int limit, u32 queue)
 	unsigned int desc_size;
 	struct bpf_prog *prog;
 	bool failure = false;
-	unsigned long flags;
 	int xdp_status = 0;
 	int status = 0;
 
@@ -5251,9 +5244,9 @@ read_again:
 
 	stmmac_finalize_xdp_rx(priv, xdp_status);
 
-	flags = u64_stats_update_begin_irqsave(&rxq_stats->syncp);
-	rxq_stats->rx_pkt_n += count;
-	u64_stats_update_end_irqrestore(&rxq_stats->syncp, flags);
+	u64_stats_update_begin(&rxq_stats->napi_syncp);
+	u64_stats_add(&rxq_stats->napi.rx_pkt_n, count);
+	u64_stats_update_end(&rxq_stats->napi_syncp);
 
 	priv->xstats.rx_dropped += rx_dropped;
 	priv->xstats.rx_errors += rx_errors;
@@ -5291,7 +5284,6 @@ static int stmmac_rx(struct stmmac_priv *priv, int limit, u32 queue)
 	unsigned int desc_size;
 	struct sk_buff *skb = NULL;
 	struct stmmac_xdp_buff ctx;
-	unsigned long flags;
 	int xdp_status = 0;
 	int bufsz;
 
@@ -5542,11 +5534,11 @@ drain_data:
 
 	stmmac_rx_refill(priv, queue);
 
-	flags = u64_stats_update_begin_irqsave(&rxq_stats->syncp);
-	rxq_stats->rx_packets += rx_packets;
-	rxq_stats->rx_bytes += rx_bytes;
-	rxq_stats->rx_pkt_n += count;
-	u64_stats_update_end_irqrestore(&rxq_stats->syncp, flags);
+	u64_stats_update_begin(&rxq_stats->napi_syncp);
+	u64_stats_add(&rxq_stats->napi.rx_packets, rx_packets);
+	u64_stats_add(&rxq_stats->napi.rx_bytes, rx_bytes);
+	u64_stats_add(&rxq_stats->napi.rx_pkt_n, count);
+	u64_stats_update_end(&rxq_stats->napi_syncp);
 
 	priv->xstats.rx_dropped += rx_dropped;
 	priv->xstats.rx_errors += rx_errors;
@@ -5561,13 +5553,12 @@ static int stmmac_napi_poll_rx(struct napi_struct *napi, int budget)
 	struct stmmac_priv *priv = ch->priv_data;
 	struct stmmac_rxq_stats *rxq_stats;
 	u32 chan = ch->index;
-	unsigned long flags;
 	int work_done;
 
 	rxq_stats = &priv->xstats.rxq_stats[chan];
-	flags = u64_stats_update_begin_irqsave(&rxq_stats->syncp);
-	rxq_stats->napi_poll++;
-	u64_stats_update_end_irqrestore(&rxq_stats->syncp, flags);
+	u64_stats_update_begin(&rxq_stats->napi_syncp);
+	u64_stats_inc(&rxq_stats->napi.poll);
+	u64_stats_update_end(&rxq_stats->napi_syncp);
 
 	work_done = stmmac_rx(priv, budget, chan);
 	if (work_done < budget && napi_complete_done(napi, work_done)) {
@@ -5588,13 +5579,12 @@ static int stmmac_napi_poll_tx(struct napi_struct *napi, int budget)
 	struct stmmac_priv *priv = ch->priv_data;
 	struct stmmac_txq_stats *txq_stats;
 	u32 chan = ch->index;
-	unsigned long flags;
 	int work_done;
 
 	txq_stats = &priv->xstats.txq_stats[chan];
-	flags = u64_stats_update_begin_irqsave(&txq_stats->syncp);
-	txq_stats->napi_poll++;
-	u64_stats_update_end_irqrestore(&txq_stats->syncp, flags);
+	u64_stats_update_begin(&txq_stats->napi_syncp);
+	u64_stats_inc(&txq_stats->napi.poll);
+	u64_stats_update_end(&txq_stats->napi_syncp);
 
 	work_done = stmmac_tx_clean(priv, budget, chan);
 	work_done = min(work_done, budget);
@@ -5619,17 +5609,16 @@ static int stmmac_napi_poll_rxtx(struct napi_struct *napi, int budget)
 	struct stmmac_rxq_stats *rxq_stats;
 	struct stmmac_txq_stats *txq_stats;
 	u32 chan = ch->index;
-	unsigned long flags;
 
 	rxq_stats = &priv->xstats.rxq_stats[chan];
-	flags = u64_stats_update_begin_irqsave(&rxq_stats->syncp);
-	rxq_stats->napi_poll++;
-	u64_stats_update_end_irqrestore(&rxq_stats->syncp, flags);
+	u64_stats_update_begin(&rxq_stats->napi_syncp);
+	u64_stats_inc(&rxq_stats->napi.poll);
+	u64_stats_update_end(&rxq_stats->napi_syncp);
 
 	txq_stats = &priv->xstats.txq_stats[chan];
-	flags = u64_stats_update_begin_irqsave(&txq_stats->syncp);
-	txq_stats->napi_poll++;
-	u64_stats_update_end_irqrestore(&txq_stats->syncp, flags);
+	u64_stats_update_begin(&txq_stats->napi_syncp);
+	u64_stats_inc(&txq_stats->napi.poll);
+	u64_stats_update_end(&txq_stats->napi_syncp);
 
 	tx_done = stmmac_tx_clean(priv, budget, chan);
 	tx_done = min(tx_done, budget);
@@ -6891,10 +6880,13 @@ static void stmmac_get_stats64(struct net_device *dev, struct rtnl_link_stats64 
 		u64 tx_bytes;
 
 		do {
-			start = u64_stats_fetch_begin(&txq_stats->syncp);
-			tx_packets = txq_stats->tx_packets;
-			tx_bytes   = txq_stats->tx_bytes;
-		} while (u64_stats_fetch_retry(&txq_stats->syncp, start));
+			start = u64_stats_fetch_begin(&txq_stats->q_syncp);
+			tx_bytes   = u64_stats_read(&txq_stats->q.tx_bytes);
+		} while (u64_stats_fetch_retry(&txq_stats->q_syncp, start));
+		do {
+			start = u64_stats_fetch_begin(&txq_stats->napi_syncp);
+			tx_packets = u64_stats_read(&txq_stats->napi.tx_packets);
+		} while (u64_stats_fetch_retry(&txq_stats->napi_syncp, start));
 
 		stats->tx_packets += tx_packets;
 		stats->tx_bytes += tx_bytes;
@@ -6906,10 +6898,10 @@ static void stmmac_get_stats64(struct net_device *dev, struct rtnl_link_stats64 
 		u64 rx_bytes;
 
 		do {
-			start = u64_stats_fetch_begin(&rxq_stats->syncp);
-			rx_packets = rxq_stats->rx_packets;
-			rx_bytes   = rxq_stats->rx_bytes;
-		} while (u64_stats_fetch_retry(&rxq_stats->syncp, start));
+			start = u64_stats_fetch_begin(&rxq_stats->napi_syncp);
+			rx_packets = u64_stats_read(&rxq_stats->napi.rx_packets);
+			rx_bytes   = u64_stats_read(&rxq_stats->napi.rx_bytes);
+		} while (u64_stats_fetch_retry(&rxq_stats->napi_syncp, start));
 
 		stats->rx_packets += rx_packets;
 		stats->rx_bytes += rx_bytes;
@@ -7273,9 +7265,16 @@ int stmmac_dvr_probe(struct device *device,
 	priv->dev = ndev;
 
 	for (i = 0; i < MTL_MAX_RX_QUEUES; i++)
-		u64_stats_init(&priv->xstats.rxq_stats[i].syncp);
-	for (i = 0; i < MTL_MAX_TX_QUEUES; i++)
-		u64_stats_init(&priv->xstats.txq_stats[i].syncp);
+		u64_stats_init(&priv->xstats.rxq_stats[i].napi_syncp);
+	for (i = 0; i < MTL_MAX_TX_QUEUES; i++) {
+		u64_stats_init(&priv->xstats.txq_stats[i].q_syncp);
+		u64_stats_init(&priv->xstats.txq_stats[i].napi_syncp);
+	}
+
+	priv->xstats.pcpu_stats =
+		devm_netdev_alloc_pcpu_stats(device, struct stmmac_pcpu_stats);
+	if (!priv->xstats.pcpu_stats)
+		return -ENOMEM;
 
 	stmmac_set_ethtool_ops(ndev);
 	priv->pause = pause;
