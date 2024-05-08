@@ -127,7 +127,7 @@ struct ath12k_ext_irq_grp {
 	u64 timestamp;
 	bool napi_enabled;
 	struct napi_struct napi;
-	struct net_device napi_ndev;
+	struct net_device *napi_ndev;
 };
 
 #define HEHANDLE_CAP_PHYINFO_SIZE       3
