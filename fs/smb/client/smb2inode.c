@@ -24,7 +24,7 @@
 #include "smb2pdu.h"
 #include "smb2proto.h"
 #include "cached_dir.h"
-#include "smb2status.h"
+#include "../common/smb2status.h"
 
 static inline __u32 file_create_options(struct dentry *dentry)
 {
