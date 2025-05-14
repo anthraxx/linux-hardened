@@ -56,6 +56,7 @@ config MSEAL_SYSTEM_MAPPINGS
 	depends on 64BIT
 	depends on ARCH_SUPPORTS_MSEAL_SYSTEM_MAPPINGS
 	depends on !CHECKPOINT_RESTORE
+	default y
 	help
 	  Apply mseal on system mappings.
 	  The system mappings includes vdso, vvar, vvar_vclock,
