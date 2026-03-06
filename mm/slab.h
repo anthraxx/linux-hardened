@@ -226,7 +226,7 @@ struct kmem_cache {
 #ifdef CONFIG_SLAB_CANARY
 	unsigned long random_active;
 	unsigned long random_inactive;
-	unsigned long sheaf_random_active;
+	unsigned long sheaf_random_inactive;
 #endif
 
 #ifdef CONFIG_NUMA
