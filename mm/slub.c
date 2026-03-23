@@ -923,10 +923,45 @@ static inline void set_canary(struct kmem_cache *s, void *object, unsigned long 
 	*canary = get_canary_value(canary, value);
 }
 
+static inline void print_canary_value(struct kmem_cache *s, void * object, unsigned long value)
+{
+	unsigned long *canary = get_canary(s, object);
+
+	early_printk("check_canary: canary mismatch on cache (%s) "
+	      "for object %p:\n"
+	      "\tchecked canary value = %lx\n"
+	      "\tobject canary value = %lx\n"
+	      "\tpossible canary values for the cache :\n"
+	      "\trandom_active = %lx\n"
+	      "\trandom_inactive = %lx\n"
+	      "\tsheaf_random_inactive = %lx\n",
+	      s->name,
+	      object,
+	      get_canary_value(canary, value),
+	      *canary,
+	      get_canary_value(canary, s->random_active),
+	      get_canary_value(canary, s->random_inactive),
+	      get_canary_value(canary, s->sheaf_random_inactive));
+}
+
+static bool canary_debug __ro_after_init = false;
+static int __init setup_canary_debug(char *str)
+{
+	canary_debug = true;
+	return 1;
+}
+__setup_param("canary_debug", canary_debug, setup_canary_debug, 0);
+__setup("canary_debug", setup_canary_debug);
+
 static inline void check_canary(struct kmem_cache *s, void *object, unsigned long value)
 {
 	unsigned long *canary = get_canary(s, object);
-	BUG_ON(*canary != get_canary_value(canary, value));
+
+	if (*canary != get_canary_value(canary, value)) {
+		if (unlikely(canary_debug))
+			print_canary_value(s, object, value);
+		BUG_ON(1);
+	}
 }
 
 static inline void check_set_canary(struct kmem_cache *s, void *object, unsigned long check_value, unsigned long set_value)
