@@ -966,7 +966,7 @@ static inline void check_canary(struct kmem_cache *s, void *object, unsigned lon
 
 static inline void check_set_canary(struct kmem_cache *s, void *object, unsigned long check_value, unsigned long set_value)
 {
-	if (!is_kfence_address(object)) {
+	if (object && !is_kfence_address(object)) {
 		check_canary(s, object, check_value);
 		set_canary(s, object, set_value);
 	}
