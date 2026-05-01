@@ -309,7 +309,12 @@ typedef const gimple *const_gimple_ptr;
 #define gimple gimple_ptr
 #define const_gimple const_gimple_ptr
 #undef CONST_CAST_GIMPLE
+#if BUILDING_GCC_VERSION >= 16000
+#define CONST_CAST_GIMPLE(X) const_cast<gimple>((X))
+#define CONST_CAST_TREE(X) const_cast<tree>((X))
+#else
 #define CONST_CAST_GIMPLE(X) CONST_CAST(gimple, (X))
+#endif
 
 /* gimple related */
 static inline gimple gimple_build_assign_with_ops(enum tree_code subcode, tree lhs, tree op1, tree op2 MEM_STAT_DECL)
