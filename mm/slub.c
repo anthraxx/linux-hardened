@@ -944,6 +944,15 @@ static inline void print_canary_value(struct kmem_cache *s, void * object, unsig
 	      get_canary_value(canary, s->sheaf_random_inactive));
 }
 
+static bool disable_canary __ro_after_init = false;
+static int __init setup_disable_canary(char *str)
+{
+	disable_canary = true;
+	return 1;
+}
+__setup_param("disable_canary", disable_canary, setup_disable_canary, 0);
+__setup("disable_canary", setup_disable_canary);
+
 static bool canary_debug __ro_after_init = false;
 static int __init setup_canary_debug(char *str)
 {
@@ -966,7 +975,7 @@ static inline void check_canary(struct kmem_cache *s, void *object, unsigned lon
 
 static inline void check_set_canary(struct kmem_cache *s, void *object, unsigned long check_value, unsigned long set_value)
 {
-	if (object && !is_kfence_address(object)) {
+	if (likely(!disable_canary) && object && !is_kfence_address(object)) {
 		check_canary(s, object, check_value);
 		set_canary(s, object, set_value);
 	}
@@ -2715,7 +2724,7 @@ bool slab_free_hook(struct kmem_cache *s, void *x, bool init,
 	 * Postpone setting the inactive canary until the metadata
 	 * has potentially been cleared at the end of this function.
 	 */
-	if (canary) {
+	if (likely(!disable_canary) && canary) {
 		check_canary(s, x, s->random_active);
 	}
 
@@ -2802,7 +2811,7 @@ bool slab_free_hook(struct kmem_cache *s, void *x, bool init,
 			s->ctor(x);
 	}
 
-	if (canary) {
+	if (likely(!disable_canary) && canary) {
 		set_canary(s, x, s->random_inactive);
 	}
 
@@ -2873,7 +2882,9 @@ bool slab_free_freelist_hook(struct kmem_cache *s, void **head, void **tail,
 static void *setup_object(struct kmem_cache *s, void *object)
 {
 	setup_object_debug(s, object);
-	set_canary(s, object, s->random_inactive);
+	if (likely(!disable_canary) && object) {
+		set_canary(s, object, s->random_inactive);
+	}
 	object = kasan_init_slab_obj(s, object);
 	if (unlikely(s->ctor) && !has_sanitize_verify(s)) {
 		kasan_unpoison_new_object(s, object);
@@ -8326,7 +8337,7 @@ void __check_heap_object(const void *ptr, unsigned long n,
 		offset -= s->red_left_pad;
 	}
 
-	if (!is_kfence) {
+	if (likely(!disable_canary) && !is_kfence) {
 		check_canary(s, (void *)ptr - offset, s->random_active);
 	}
 
