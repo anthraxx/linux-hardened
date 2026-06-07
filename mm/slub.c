@@ -3126,9 +3126,9 @@ static void rcu_free_sheaf_nobarn(struct rcu_head *head)
 	sheaf = container_of(head, struct slab_sheaf, rcu_head);
 	s = sheaf->cache;
 
-	__rcu_free_sheaf_prepare(s, sheaf, true);
+	__rcu_free_sheaf_prepare(s, sheaf, false);
 
-	sheaf_flush_unused(s, sheaf, false);
+	sheaf_flush_unused(s, sheaf, true);
 
 	free_empty_sheaf(s, sheaf);
 }
