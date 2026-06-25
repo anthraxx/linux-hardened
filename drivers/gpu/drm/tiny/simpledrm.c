@@ -52,12 +52,12 @@ static int
 simplefb_get_validated_int0(struct drm_device *dev, const char *name,
 			    uint32_t value)
 {
-	if (!value) {
+	if (!value || value > U16_MAX) {
 		drm_err(dev, "simplefb: invalid framebuffer %s of %u\n",
 			name, value);
 		return -EINVAL;
 	}
-	return simplefb_get_validated_int(dev, name, value);
+	return (int)value;
 }
 
 static const struct drm_format_info *
