@@ -1722,6 +1722,11 @@ static int elf_validity_check(struct load_info *info)
 	}
 
 	strhdr = &info->sechdrs[info->hdr->e_shstrndx];
+	if (strhdr->sh_type != SHT_STRTAB) {
+		pr_err("Invalid ELF section name table type: %u\n", strhdr->sh_type);
+		goto no_exec;
+	}
+
 	err = validate_section_offset(info, strhdr);
 	if (err < 0) {
 		pr_err("Invalid ELF section hdr(type %u)\n", strhdr->sh_type);
@@ -1767,6 +1772,11 @@ static int elf_validity_check(struct load_info *info)
 				pr_err("Invalid ELF sh_link!=SHN_UNDEF(%d) or (sh_link(%d) >= hdr->e_shnum(%d)\n",
 				       shdr->sh_link, shdr->sh_link,
 				       info->hdr->e_shnum);
+				goto no_exec;
+			}
+			if (info->sechdrs[shdr->sh_link].sh_type != SHT_STRTAB) {
+				pr_err("Invalid ELF symbol string table type: %u\n",
+				       info->sechdrs[shdr->sh_link].sh_type);
 				goto no_exec;
 			}
 			fallthrough;
