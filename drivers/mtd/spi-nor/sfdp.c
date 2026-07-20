@@ -1248,6 +1248,7 @@ out:
 }
 
 #define SCCR_DWORD22_OCTAL_DTR_EN_VOLATILE		BIT(31)
+#define SFDP_SCCR_DWORD_MIN				22
 
 /**
  * spi_nor_parse_sccr() - Parse the Status, Control and Configuration Register
@@ -1265,6 +1266,9 @@ static int spi_nor_parse_sccr(struct spi_nor *nor,
 	u32 *dwords, addr;
 	size_t len;
 	int ret;
+
+	if (sccr_header->length < SFDP_SCCR_DWORD_MIN)
+		return -EINVAL;
 
 	len = sccr_header->length * sizeof(*dwords);
 	dwords = kmalloc(len, GFP_KERNEL);
