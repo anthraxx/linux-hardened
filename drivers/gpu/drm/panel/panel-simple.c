@@ -4163,6 +4163,9 @@ static const struct of_device_id platform_of_match[] = {
 		.compatible = "koe,tx31d200vm0baa",
 		.data = &koe_tx31d200vm0baa,
 	}, {
+		.compatible = "kyo,tcg070wvlq",
+		.data = &lg_lb070wv8,
+	}, {
 		.compatible = "kyo,tcg121xglp",
 		.data = &kyo_tcg121xglp,
 	}, {
