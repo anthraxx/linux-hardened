@@ -110,6 +110,8 @@
 #include <linux/pidfs.h>
 #include <linux/tick.h>
 #include <linux/unwind_deferred.h>
+#include <linux/cred.h>
+#include <linux/uidgid.h>
 #include <linux/pgalloc.h>
 #include <linux/uaccess.h>
 
@@ -1990,9 +1992,12 @@ __latent_entropy struct task_struct *copy_process(
 	if ((clone_flags & (CLONE_NEWUSER|CLONE_FS)) == (CLONE_NEWUSER|CLONE_FS))
 		return ERR_PTR(-EINVAL);
 
-	if ((clone_flags & CLONE_NEWUSER) && !unprivileged_userns_clone)
-		if (!capable(CAP_SYS_ADMIN))
-			return ERR_PTR(-EPERM);
+	if ((clone_flags & CLONE_NEWUSER) &&
+	    unprivileged_userns_clone != 1 &&
+	    !capable(CAP_SYS_ADMIN) &&
+	    (unprivileged_userns_clone < 2 ||
+	        !in_egroup_p(make_kgid(current_user_ns(), unprivileged_userns_clone))))
+		return ERR_PTR(-EPERM);
 
 	/*
 	 * Thread groups must share signals as well, and detached threads
@@ -3226,11 +3231,13 @@ int ksys_unshare(unsigned long unshare_flags)
 	if (unshare_flags & CLONE_NEWNS)
 		unshare_flags |= CLONE_FS;
 
-	if ((unshare_flags & CLONE_NEWUSER) && !unprivileged_userns_clone) {
-		err = -EPERM;
-		if (!capable(CAP_SYS_ADMIN))
-			goto bad_unshare_out;
-	}
+	err = -EPERM;
+	if ((unshare_flags & CLONE_NEWUSER) &&
+	    unprivileged_userns_clone != 1 &&
+	    !capable(CAP_SYS_ADMIN) &&
+	    (unprivileged_userns_clone < 2 ||
+	        !in_egroup_p(make_kgid(current_user_ns(), unprivileged_userns_clone))))
+		goto bad_unshare_out;
 
 	err = check_unshare_flags(unshare_flags);
 	if (err)
