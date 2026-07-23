@@ -1502,7 +1502,7 @@ static const struct ctl_table sysctl_subsys_table[] = {
 		.mode		= 0644,
 		.proc_handler	= proc_dointvec_minmax,
 		.extra1         = SYSCTL_ZERO,
-		.extra2         = SYSCTL_ONE,
+		.extra2         = SYSCTL_INT_MAX,
 	},
 #endif
 #ifdef CONFIG_PROC_SYSCTL
