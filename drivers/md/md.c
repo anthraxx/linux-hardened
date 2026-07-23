@@ -9038,8 +9038,10 @@ void md_do_sync(struct md_thread *thread)
 			 */
 			md_new_event(mddev);
 
-		if (last_check + window > io_sectors || j == max_sectors)
+		if (last_check + window > io_sectors || j == max_sectors) {
+			cond_resched();
 			continue;
+		}
 
 		last_check = io_sectors;
 	repeat:
