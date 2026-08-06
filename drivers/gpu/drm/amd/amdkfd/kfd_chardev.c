@@ -1151,7 +1151,8 @@ static int kfd_ioctl_alloc_memory_of_gpu(struct file *filep,
 
 		if (flags & KFD_IOC_ALLOC_MEM_FLAGS_AQL_QUEUE_MEM)
 			size >>= 1;
-		WRITE_ONCE(pdd->vram_usage, pdd->vram_usage + PAGE_ALIGN(size));
+		size = PAGE_ALIGN(size);
+		WRITE_ONCE(pdd->vram_usage, pdd->vram_usage + size);
 	}
 
 	mutex_unlock(&p->mutex);
