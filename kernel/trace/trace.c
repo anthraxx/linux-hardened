@@ -10437,7 +10437,7 @@ __init static void enable_instances(void)
 
 		tr = trace_array_get_by_name(tok, NULL);
 		if (!tr) {
-			pr_warn("Failed to create instance buffer %s\n", curr_str);
+			pr_warn("Failed to create instance buffer '%s'\n", tok);
 			continue;
 		}
 		/* Allow user space to delete it */
