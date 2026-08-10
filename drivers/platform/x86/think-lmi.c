@@ -676,14 +676,27 @@ static ssize_t certificate_thumbprint_show(struct kobject *kobj, struct kobj_att
 			 char *buf)
 {
 	struct tlmi_pwd_setting *setting = to_tlmi_pwd_setting(kobj);
+	ssize_t ret;
 	int count = 0;
 
 	if (!tlmi_priv.certificate_support || !setting->cert_installed)
 		return -EOPNOTSUPP;
 
-	count += cert_thumbprint(buf, "Md5", count);
-	count += cert_thumbprint(buf, "Sha1", count);
-	count += cert_thumbprint(buf, "Sha256", count);
+	ret = cert_thumbprint(buf, "Md5", count);
+	if (ret < 0)
+		return ret;
+	count = ret;
+
+	ret = cert_thumbprint(buf, "Sha1", count);
+	if (ret < 0)
+		return ret;
+	count = ret;
+
+	ret = cert_thumbprint(buf, "Sha256", count);
+	if (ret < 0)
+		return ret;
+	count = ret;
+
 	return count;
 }
 
