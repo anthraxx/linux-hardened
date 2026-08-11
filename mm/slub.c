@@ -2656,6 +2656,46 @@ struct rcu_delayed_free {
 #endif
 
 /*
+ * As memory initialization might be integrated into KASAN, this must stay
+ * next to kasan_slab_free() in each free path.
+ *
+ * The initialization memset's clear the object and the metadata, but don't
+ * touch the SLAB redzone. The object's freepointer is also avoided if stored
+ * outside the object.
+ */
+static __always_inline void slab_free_init(struct kmem_cache *s, void *x,
+					   bool init)
+{
+	unsigned int inuse, orig_size;
+	int rsize;
+
+	if (likely(!init))
+		return;
+
+	inuse = get_info_end(s);
+	orig_size = get_orig_size(s, x);
+	if (!kasan_has_integrated_init())
+		memset(kasan_reset_tag(x), 0, orig_size);
+	rsize = (s->flags & SLAB_RED_ZONE) ? s->red_left_pad : 0;
+
+#ifdef CONFIG_SLAB_CANARY
+	memset((char *)kasan_reset_tag(x) + inuse + sizeof(void *), 0,
+	       s->size - inuse - sizeof(void *) - rsize);
+#else
+	memset((char *)kasan_reset_tag(x) + inuse, 0,
+	       s->size - inuse - rsize);
+#endif
+	/*
+	 * Restore orig_size, otherwise kmalloc redzone overwritten would be
+	 * reported.
+	 */
+	set_orig_size(s, x, orig_size);
+
+	if (!IS_ENABLED(CONFIG_SLAB_SANITIZE_VERIFY) && s->ctor)
+		s->ctor(x);
+}
+
+/*
  * Hooks for other subsystems that check memory allocations. In a typical
  * production configuration these hooks all should produce no code at all.
  *
@@ -2741,43 +2781,7 @@ bool slab_free_hook(struct kmem_cache *s, void *x, bool init,
 	}
 #endif /* CONFIG_SLUB_RCU_DEBUG */
 
-	/*
-	 * As memory initialization might be integrated into KASAN,
-	 * kasan_slab_free and initialization memset's must be
-	 * kept together to avoid discrepancies in behavior.
-	 *
-	 * The initialization memset's clear the object and the metadata,
-	 * but don't touch the SLAB redzone.
-	 *
-	 * The object's freepointer is also avoided if stored outside the
-	 * object.
-	 */
-	if (unlikely(init)) {
-		int rsize;
-		unsigned int inuse, orig_size;
-
-		inuse = get_info_end(s);
-		orig_size = get_orig_size(s, x);
-		if (!kasan_has_integrated_init())
-			memset(kasan_reset_tag(x), 0, orig_size);
-		rsize = (s->flags & SLAB_RED_ZONE) ? s->red_left_pad : 0;
-
-#ifdef CONFIG_SLAB_CANARY
-		memset((char *)kasan_reset_tag(x) + inuse + sizeof(void *), 0,
-		       s->size - inuse - sizeof(void *) - rsize);
-#else
-		memset((char *)kasan_reset_tag(x) + inuse, 0,
-		       s->size - inuse - rsize);
-#endif
-		/*
-		 * Restore orig_size, otherwise kmalloc redzone overwritten
-		 * would be reported
-		 */
-		set_orig_size(s, x, orig_size);
-
-		if (!IS_ENABLED(CONFIG_SLAB_SANITIZE_VERIFY) && s->ctor)
-			s->ctor(x);
-	}
+	slab_free_init(s, x, init);
 
 	if (canary) {
 		set_canary(s, x, s->random_inactive);
@@ -6810,6 +6814,7 @@ void kfree_nolock(const void *object)
 	struct slab *slab;
 	struct kmem_cache *s;
 	void *x = (void *)object;
+	bool init;
 
 	if (unlikely(ZERO_OR_NULL_PTR(object)))
 		return;
@@ -6845,12 +6850,16 @@ void kfree_nolock(const void *object)
 	 */
 	if (kasan_slab_pre_free(s, x))
 		return;
+
+	init = slab_want_init_on_free(s);
+	slab_free_init(s, x, init);
+
 	/*
 	 * memcg, kasan_slab_pre_free are done for 'x'.
 	 * The only thing left is kasan_poison without quarantine,
 	 * since kasan quarantine takes locks and not supported from NMI.
 	 */
-	kasan_slab_free(s, x, false, false, /* skip quarantine */true);
+	kasan_slab_free(s, x, init, false, /* skip quarantine */true);
 
 	if (likely(can_free_to_pcs(slab)) && likely(free_to_pcs(s, x, false)))
 		return;
