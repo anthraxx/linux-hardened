@@ -6263,6 +6263,9 @@ static void free_to_pcs_bulk(struct kmem_cache *s, size_t size, void **p)
 			remote_objects[remote_nr] = p[i];
 			p[i] = p[--size];
 			if (++remote_nr >= PCS_BATCH_MAX) {
+				check_set_canary_bulk(s, remote_nr, &remote_objects[0],
+						      s->random_active,
+						      s->random_inactive);
 				__kmem_cache_free_bulk(s, remote_nr, &remote_objects[0]);
 				stat_add(s, FREE_SLOWPATH, remote_nr);
 				remote_nr = 0;
