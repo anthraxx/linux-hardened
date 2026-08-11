@@ -427,10 +427,11 @@ void kasan_cache_create(struct kmem_cache *cache, unsigned int *size,
 	 * For smaller objects, store the beginning of free meta within the
 	 * object and the end in the redzone. And thus shift the location of
 	 * alloc meta to free up space for free meta.
-	 * This is only possible when slub_debug is disabled, as otherwise
-	 * the end of free meta will overlap with slub_debug metadata.
+	 * This is only possible when slub_debug is disabled and the redzone
+	 * contains no SLAB canary, as otherwise the end of free meta will
+	 * overlap with metadata owned by SLUB.
 	 */
-	if (!__slub_debug_enabled()) {
+	if (!__slub_debug_enabled() && !IS_ENABLED(CONFIG_SLAB_CANARY)) {
 		rem_free_meta_size = sizeof(struct kasan_free_meta) -
 							cache->object_size;
 		*size += rem_free_meta_size;
@@ -440,8 +441,8 @@ void kasan_cache_create(struct kmem_cache *cache, unsigned int *size,
 	}
 
 	/*
-	 * If the object is small and slub_debug is enabled, store free meta
-	 * in the redzone after alloc meta.
+	 * If the object is small and slub_debug is enabled or the redzone
+	 * contains a SLAB canary, store free meta in the redzone after alloc meta.
 	 */
 	cache->kasan_info.free_meta_offset = *size;
 	*size += sizeof(struct kasan_free_meta);
