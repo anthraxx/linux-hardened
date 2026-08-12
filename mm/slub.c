@@ -931,7 +931,7 @@ static inline void print_canary_value(struct kmem_cache *s, void * object, unsig
 {
 	unsigned long *canary = get_canary(s, object);
 
-	early_printk("check_canary: canary mismatch on cache (%s) "
+	pr_emerg("check_canary: canary mismatch on cache (%s) "
 	      "for object %p:\n"
 	      "\tchecked canary value = %lx\n"
 	      "\tobject canary value = %lx\n"
