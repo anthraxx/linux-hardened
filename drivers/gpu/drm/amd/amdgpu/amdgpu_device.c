@@ -4979,6 +4979,15 @@ int amdgpu_device_pre_asic_reset(struct amdgpu_device *adev,
 	if (adev->gfx.kiq.ring.fence_drv.initialized && adev->gfx.kiq.ring.sched.ready)
 		amdgpu_fence_driver_force_completion(&adev->gfx.kiq.ring);
 
+	/*
+	 * MES scheduler rings have no drm scheduler, so they are missed by the
+	 * loop above. Realign their polling fence too (one per XCC), otherwise the
+	 * first post-reset submission polls forever on a stale seq. sched.ready is
+	 * only set while the driver owns the ring.
+	 */
+	if (adev->mes.ring.fence_drv.initialized && adev->mes.ring.sched.ready)
+		amdgpu_fence_driver_force_completion(&adev->mes.ring);
+
 	amdgpu_fence_driver_isr_toggle(adev, false);
 
 	if (job && job->vm)
