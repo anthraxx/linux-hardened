@@ -2655,6 +2655,13 @@ struct rcu_delayed_free {
 };
 #endif
 
+enum slab_free_canary {
+	SLAB_FREE_CANARY_NONE,
+	SLAB_FREE_CANARY_ACTIVE,
+	SLAB_FREE_CANARY_ACTIVE_DEFERRED,
+	SLAB_FREE_CANARY_SHEAF_DEFERRED,
+};
+
 /*
  * Hooks for other subsystems that check memory allocations. In a typical
  * production configuration these hooks all should produce no code at all.
@@ -2683,18 +2690,19 @@ struct rcu_delayed_free {
  */
 static __always_inline
 bool slab_free_hook(struct kmem_cache *s, void *x, bool init,
-		    bool after_rcu_delay, bool canary)
+	bool after_rcu_delay, enum slab_free_canary canary)
 {
 	/* Are the object contents still accessible? */
 	bool still_accessible = (s->flags & SLAB_TYPESAFE_BY_RCU) && !after_rcu_delay;
+	bool quarantine_canary = IS_ENABLED(CONFIG_KASAN_GENERIC) && !still_accessible &&
+	(canary == SLAB_FREE_CANARY_ACTIVE_DEFERRED || canary == SLAB_FREE_CANARY_SHEAF_DEFERRED);
 
 	/*
 	 * Postpone setting the inactive canary until the metadata
 	 * has potentially been cleared at the end of this function.
 	 */
-	if (canary) {
+	if (canary == SLAB_FREE_CANARY_ACTIVE)
 		check_canary(s, x, s->random_active);
-	}
 
 	kmemleak_free_recursive(x, s->flags);
 	kmsan_slab_free(s, x);
@@ -2779,12 +2787,33 @@ bool slab_free_hook(struct kmem_cache *s, void *x, bool init,
 			s->ctor(x);
 	}
 
-	if (canary) {
+	if (canary == SLAB_FREE_CANARY_ACTIVE) {
 		set_canary(s, x, s->random_inactive);
+	} else if (quarantine_canary) {
+		/*
+		 * KASAN can publish the object to quarantine before returning.
+		 * Quarantine eviction frees it directly to the slab freelist, so
+		 * first validate its exact source and make it slab-inactive.
+		 */
+		if (canary == SLAB_FREE_CANARY_ACTIVE_DEFERRED)
+			check_set_canary(s, x, s->random_active, s->random_inactive);
+		else
+			check_set_canary(s, x, s->sheaf_random_inactive, s->random_inactive);
 	}
 
 	/* KASAN might put x into memory quarantine, delaying its reuse. */
-	return !kasan_slab_free(s, x, init, still_accessible, false);
+	if (kasan_slab_free(s, x, init, still_accessible, false))
+		return false;
+
+	/* KASAN did not take ownership; restore the caller's source state. */
+	if (quarantine_canary) {
+		if (canary == SLAB_FREE_CANARY_ACTIVE_DEFERRED)
+			check_set_canary(s, x, s->random_inactive, s->random_active);
+		else
+			check_set_canary(s, x, s->random_inactive, s->sheaf_random_inactive);
+	}
+
+	return true;
 }
 
 static __fastpath_inline
@@ -2798,7 +2827,7 @@ bool slab_free_freelist_hook(struct kmem_cache *s, void **head, void **tail,
 	bool init;
 
 	if (is_kfence_address(next)) {
-		slab_free_hook(s, next, false, false, false);
+		slab_free_hook(s, next, false, false, SLAB_FREE_CANARY_NONE);
 		return false;
 	}
 
@@ -2813,7 +2842,7 @@ bool slab_free_freelist_hook(struct kmem_cache *s, void **head, void **tail,
 		next = get_freepointer(s, object);
 
 		/* If object's reuse doesn't have to be delayed */
-		if (likely(slab_free_hook(s, object, init, false, true))) {
+		if (likely(slab_free_hook(s, object, init, false, SLAB_FREE_CANARY_ACTIVE))) {
 			/* Move object to the new freelist */
 			set_freepointer(s, object, *head);
 			*head = object;
@@ -3050,8 +3079,7 @@ static void sheaf_flush_unused(struct kmem_cache *s, struct slab_sheaf *sheaf, b
 }
 
 static bool __rcu_free_sheaf_prepare(struct kmem_cache *s,
-				     struct slab_sheaf *sheaf,
-				     bool canary)
+				     struct slab_sheaf *sheaf)
 {
 	bool init = slab_want_init_on_free(s);
 	void **p = &sheaf->objects[0];
@@ -3064,7 +3092,8 @@ static bool __rcu_free_sheaf_prepare(struct kmem_cache *s,
 		memcg_slab_free_hook(s, slab, p + i, 1);
 		alloc_tagging_slab_free_hook(s, slab, p + i, 1);
 
-		if (unlikely(!slab_free_hook(s, p[i], init, true, canary))) {
+		if (unlikely(!slab_free_hook(s, p[i], init, true,
+					     SLAB_FREE_CANARY_SHEAF_DEFERRED))) {
 			p[i] = p[--sheaf->size];
 			continue;
 		}
@@ -3090,7 +3119,7 @@ static void rcu_free_sheaf_nobarn(struct rcu_head *head)
 	 * linux-hardened: Sheaf flushing, sheaf object canaries
 	 * goes from sheaf_random_inactive to random_inactive.
 	 */
-	__rcu_free_sheaf_prepare(s, sheaf, false);
+	__rcu_free_sheaf_prepare(s, sheaf);
 
 	sheaf_flush_unused(s, sheaf, true);
 
@@ -6030,7 +6059,7 @@ static void rcu_free_sheaf(struct rcu_head *head)
 	 * If it returns true, there was at least one object from pfmemalloc
 	 * slab so simply flush everything.
 	 */
-	if (__rcu_free_sheaf_prepare(s, sheaf, false))
+	if (__rcu_free_sheaf_prepare(s, sheaf))
 		goto flush;
 
 	barn = get_barn_node(s, sheaf->node);
@@ -6254,7 +6283,8 @@ static void free_to_pcs_bulk(struct kmem_cache *s, size_t size, void **p)
 		memcg_slab_free_hook(s, slab, p + i, 1);
 		alloc_tagging_slab_free_hook(s, slab, p + i, 1);
 
-		if (unlikely(!slab_free_hook(s, p[i], init, false, false))) {
+		if (unlikely(!slab_free_hook(s, p[i], init, false,
+					     SLAB_FREE_CANARY_ACTIVE_DEFERRED))) {
 			p[i] = p[--size];
 			continue;
 		}
@@ -6439,7 +6469,7 @@ static __fastpath_inline
 void slab_free(struct kmem_cache *s, struct slab *slab, void *object,
 	       unsigned long addr)
 {
-	bool canary = true;
+	enum slab_free_canary canary = SLAB_FREE_CANARY_ACTIVE;
 
 	memcg_slab_free_hook(s, slab, &object, 1);
 	alloc_tagging_slab_free_hook(s, slab, &object, 1);
@@ -6448,8 +6478,10 @@ void slab_free(struct kmem_cache *s, struct slab *slab, void *object,
 	 * Make sure canaries are not used on kfence objects.
 	 * Defer canary checking if the object is freed back to pcs.
 	 */
-	if (is_kfence_address(object) || cache_has_sheaves(s))
-		canary = false;
+	if (is_kfence_address(object))
+		canary = SLAB_FREE_CANARY_NONE;
+	else if (cache_has_sheaves(s))
+		canary = SLAB_FREE_CANARY_ACTIVE_DEFERRED;
 
 	if (unlikely(!slab_free_hook(s, object, slab_want_init_on_free(s), false, canary)))
 		return;
@@ -6463,7 +6495,7 @@ void slab_free(struct kmem_cache *s, struct slab *slab, void *object,
 	 * free_to_pcs() failed. It is now freed straight to the slab freelist,
 	 * so transition from active to slab-inactive state.
 	 */
-	if (unlikely(!canary))
+	if (unlikely(canary == SLAB_FREE_CANARY_ACTIVE_DEFERRED))
 		check_set_canary(s, object, s->random_active, s->random_inactive);
 
 	__slab_free(s, slab, object, object, 1, addr);
@@ -6475,14 +6507,14 @@ void slab_free(struct kmem_cache *s, struct slab *slab, void *object,
 static noinline
 void memcg_alloc_abort_single(struct kmem_cache *s, void *object)
 {
-	bool canary = true;
+	enum slab_free_canary canary = SLAB_FREE_CANARY_ACTIVE;
 	struct slab *slab = virt_to_slab(object);
 
 	alloc_tagging_slab_free_hook(s, slab, &object, 1);
 
 	/* Make sure canaries are not used on kfence objects. */
 	if (is_kfence_address(object))
-		canary = false;
+		canary = SLAB_FREE_CANARY_NONE;
 
 	if (likely(slab_free_hook(s, object, slab_want_init_on_free(s), false, canary)))
 		__slab_free(s, slab, object, object, 1, _RET_IP_);
@@ -6527,7 +6559,7 @@ static void slab_free_after_rcu_debug(struct rcu_head *rcu_head)
 		return;
 
 	/* resume freeing */
-	if (slab_free_hook(s, object, slab_want_init_on_free(s), true, true)) {
+	if (slab_free_hook(s, object, slab_want_init_on_free(s), true, SLAB_FREE_CANARY_ACTIVE)) {
 		__slab_free(s, slab, object, object, 1, _THIS_IP_);
 		stat(s, FREE_SLOWPATH);
 	}
