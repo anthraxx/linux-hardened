@@ -191,6 +191,8 @@ int mt7615_mcu_parse_response(struct mt76_dev *mdev, int cmd,
 		break;
 	case MCU_EXT_CMD_GET_TEMP:
 		skb_pull(skb, sizeof(*rxd));
+		if (is_mt7663(mdev))
+			skb_pull(skb, 4);
 		ret = le32_to_cpu(*(__le32 *)skb->data);
 		break;
 	case MCU_EXT_CMD_RF_REG_ACCESS | MCU_QUERY_PREFIX:
