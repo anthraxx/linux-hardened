@@ -2298,6 +2298,16 @@ retry:
 
 	if (!folio_ref_count(folio)) {
 		struct hstate *h = folio_hstate(folio);
+
+		/*
+		 * remove_hugetlb_folio()/update_and_free_hugetlb_folio() bail
+		 * for gigantic hstates without runtime support, so dissolving one
+		 * here would leave it on the free list and, on vmemmap restore
+		 * failure, the add_hugetlb_folio() rollback corrupts that list.
+		 */
+		if (hstate_is_gigantic(h) && !gigantic_page_runtime_supported())
+			goto out;
+
 		if (!available_huge_pages(h))
 			goto out;
 
