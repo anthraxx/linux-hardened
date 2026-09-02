@@ -793,7 +793,7 @@ int snd_rawmidi_input_params(struct snd_rawmidi_substream *substream,
 		substream->clock_type = clock_type;
 	}
 	mutex_unlock(&substream->rmidi->open_mutex);
-	return 0;
+	return err;
 }
 EXPORT_SYMBOL(snd_rawmidi_input_params);
 
