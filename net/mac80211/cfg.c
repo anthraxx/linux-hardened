@@ -104,6 +104,10 @@ static int ieee80211_set_mon_options(struct ieee80211_sub_if_data *sdata,
 			return -EBUSY;
 	}
 
+	/* TXQs are reserved in ieee80211_if_add() and cannot be added later */
+	if ((params->flags & MONITOR_FLAG_ACTIVE) && !sdata->vif.txq)
+		return -EOPNOTSUPP;
+
 	/* also validate MU-MIMO change */
 	monitor_sdata = wiphy_dereference(local->hw.wiphy,
 					  local->monitor_sdata);
