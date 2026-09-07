@@ -332,6 +332,17 @@ out:
 }
 
 #ifdef CONFIG_HUGETLB_PAGE
+static bool damon_hugetlb_ptep_mkold(pte_t *pte, struct mm_struct *mm,
+		struct vm_area_struct *vma, unsigned long addr, pte_t *entry)
+{
+	if (!pte_young(*entry))
+		return false;
+	*entry = huge_ptep_get_and_clear(mm, addr, pte);
+	*entry = pte_mkold(*entry);
+	set_huge_pte_at(mm, addr, pte, *entry);
+	return true;
+}
+
 static void damon_hugetlb_mkold(pte_t *pte, struct mm_struct *mm,
 				struct vm_area_struct *vma, unsigned long addr)
 {
@@ -341,11 +352,7 @@ static void damon_hugetlb_mkold(pte_t *pte, struct mm_struct *mm,
 
 	get_page(page);
 
-	if (pte_young(entry)) {
-		referenced = true;
-		entry = pte_mkold(entry);
-		set_huge_pte_at(mm, addr, pte, entry);
-	}
+	referenced = damon_hugetlb_ptep_mkold(pte, mm, vma, addr, &entry);
 
 #ifdef CONFIG_MMU_NOTIFIER
 	if (mmu_notifier_clear_young(mm, addr,
