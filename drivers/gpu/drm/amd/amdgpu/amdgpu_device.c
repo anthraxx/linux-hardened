@@ -4184,10 +4184,12 @@ void amdgpu_device_fini_sw(struct amdgpu_device *adev)
 	if ((adev->pdev->class >> 8) == PCI_CLASS_DISPLAY_VGA)
 		vga_client_unregister(adev->pdev);
 
-	if (drm_dev_enter(adev_to_drm(adev), &idx)) {
-
+	if (adev->rmmio) {
 		iounmap(adev->rmmio);
 		adev->rmmio = NULL;
+	}
+
+	if (drm_dev_enter(adev_to_drm(adev), &idx)) {
 		amdgpu_doorbell_fini(adev);
 		drm_dev_exit(idx);
 	}
