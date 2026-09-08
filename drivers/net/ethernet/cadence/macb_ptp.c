@@ -381,6 +381,7 @@ void gem_ptp_init(struct net_device *dev)
 	bp->tsu_rate = bp->ptp_info->get_tsu_rate(bp);
 	bp->ptp_clock_info.max_adj = bp->ptp_info->get_ptp_max_adj();
 	gem_ptp_init_timer(bp);
+	gem_ptp_init_tsu(bp);
 	bp->ptp_clock = ptp_clock_register(&bp->ptp_clock_info, &dev->dev);
 	if (IS_ERR(bp->ptp_clock)) {
 		pr_err("ptp clock register failed: %ld\n",
@@ -392,14 +393,11 @@ void gem_ptp_init(struct net_device *dev)
 		return;
 	}
 
-	spin_lock_init(&bp->tsu_clk_lock);
 	for (q = 0, queue = bp->queues; q < bp->num_queues; ++q, ++queue) {
 		queue->tx_ts_head = 0;
 		queue->tx_ts_tail = 0;
 		INIT_WORK(&queue->tx_ts_task, gem_tx_timestamp_flush);
 	}
-
-	gem_ptp_init_tsu(bp);
 
 	dev_info(&bp->pdev->dev, "%s ptp clock registered.\n",
 		 GEM_PTP_TIMER_NAME);
