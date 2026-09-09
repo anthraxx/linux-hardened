@@ -1705,10 +1705,10 @@ struct inode *ntfs_create_inode(struct mnt_idmap *idmap, struct inode *dir,
 		goto out6;
 
 	/*
-	 * Call 'd_instantiate' after inode->i_op is set
+	 * Call 'd_instantiate_new' after inode->i_op is set
 	 * but before finish_open.
 	 */
-	d_instantiate(dentry, inode);
+	d_instantiate_new(dentry, inode);
 
 	/* Set original time. inode times (i_ctime) may be changed in ntfs_init_acl. */
 	inode->i_atime = inode->i_mtime =
@@ -1756,8 +1756,6 @@ out1:
 
 	if (err)
 		return ERR_PTR(err);
-
-	unlock_new_inode(inode);
 
 	return inode;
 }
