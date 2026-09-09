@@ -1642,10 +1642,10 @@ struct inode *ntfs_create_inode(struct user_namespace *mnt_userns,
 	}
 
 	/*
-	 * Call 'd_instantiate' after inode->i_op is set
+	 * Call 'd_instantiate_new' after inode->i_op is set
 	 * but before finish_open.
 	 */
-	d_instantiate(dentry, inode);
+	d_instantiate_new(dentry, inode);
 
 	ntfs_save_wsl_perm(inode);
 	mark_inode_dirty(dir);
@@ -1695,8 +1695,6 @@ out1:
 		ni_unlock(dir_ni);
 		return ERR_PTR(err);
 	}
-
-	unlock_new_inode(inode);
 
 	return inode;
 }
