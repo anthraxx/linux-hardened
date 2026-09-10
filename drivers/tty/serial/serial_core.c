@@ -816,7 +816,7 @@ static int uart_set_info(struct tty_struct *tty, struct tty_port *port,
 	upf_t old_flags, new_flags;
 	int retval = 0;
 
-	if (!uport)
+	if (!uport || tty_io_error(tty))
 		return -EIO;
 
 	new_port = new_info->port;
@@ -1120,7 +1120,7 @@ static int uart_break_ctl(struct tty_struct *tty, int break_state)
 
 	mutex_lock(&port->mutex);
 	uport = uart_port_check(state);
-	if (!uport)
+	if (!uport || tty_io_error(tty))
 		goto out;
 
 	if (uport->type != PORT_UNKNOWN && uport->ops->break_ctl)
@@ -1149,7 +1149,7 @@ static int uart_do_autoconfig(struct tty_struct *tty, struct uart_state *state)
 		return -ERESTARTSYS;
 
 	uport = uart_port_check(state);
-	if (!uport) {
+	if (!uport || tty_io_error(tty)) {
 		ret = -EIO;
 		goto out;
 	}
@@ -1204,7 +1204,7 @@ static void uart_enable_ms(struct uart_port *uport)
  * FIXME: This wants extracting into a common all driver implementation
  * of TIOCMWAIT using tty_port.
  */
-static int uart_wait_modem_status(struct uart_state *state, unsigned long arg)
+static int uart_wait_modem_status(struct tty_struct *tty, struct uart_state *state, unsigned long arg)
 {
 	struct uart_port *uport;
 	struct tty_port *port = &state->port;
@@ -1215,13 +1215,25 @@ static int uart_wait_modem_status(struct uart_state *state, unsigned long arg)
 	/*
 	 * note the counters on entry
 	 */
+	mutex_lock(&port->mutex);
 	uport = uart_port_ref(state);
-	if (!uport)
+	if (!uport) {
+		mutex_unlock(&port->mutex);
 		return -EIO;
+	}
+
+	if (tty_io_error(tty)) {
+		mutex_unlock(&port->mutex);
+		ret = -EIO;
+		goto out_deref;
+	}
+
 	spin_lock_irq(&uport->lock);
 	memcpy(&cprev, &uport->icount, sizeof(struct uart_icount));
 	uart_enable_ms(uport);
 	spin_unlock_irq(&uport->lock);
+
+	mutex_unlock(&port->mutex);
 
 	add_wait_queue(&port->delta_msr_wait, &wait);
 	for (;;) {
@@ -1251,6 +1263,7 @@ static int uart_wait_modem_status(struct uart_state *state, unsigned long arg)
 	}
 	__set_current_state(TASK_RUNNING);
 	remove_wait_queue(&port->delta_msr_wait, &wait);
+out_deref:
 	uart_port_deref(uport);
 
 	return ret;
@@ -1568,7 +1581,7 @@ uart_ioctl(struct tty_struct *tty, unsigned int cmd, unsigned long arg)
 	 */
 	switch (cmd) {
 	case TIOCMIWAIT:
-		ret = uart_wait_modem_status(state, arg);
+		ret = uart_wait_modem_status(tty, state, arg);
 		break;
 	}
 
@@ -1629,15 +1642,15 @@ static void uart_set_ldisc(struct tty_struct *tty)
 {
 	struct uart_state *state = tty->driver_data;
 	struct uart_port *uport;
-	struct tty_port *port = &state->port;
-
-	if (!tty_port_initialized(port))
-		return;
 
 	mutex_lock(&state->port.mutex);
 	uport = uart_port_check(state);
-	if (uport && uport->ops->set_ldisc)
+	if (!uport || tty_io_error(tty))
+		goto out;
+
+	if (uport->ops->set_ldisc)
 		uport->ops->set_ldisc(uport, &tty->termios);
+out:
 	mutex_unlock(&state->port.mutex);
 }
 
@@ -1652,7 +1665,7 @@ static void uart_set_termios(struct tty_struct *tty,
 
 	mutex_lock(&state->port.mutex);
 	uport = uart_port_check(state);
-	if (!uport)
+	if (!uport || tty_io_error(tty))
 		goto out;
 
 	/*
@@ -1817,14 +1830,25 @@ static void uart_wait_until_sent(struct tty_struct *tty, int timeout)
 	 * 'timeout' / 'expire' give us the maximum amount of time
 	 * we wait.
 	 */
-	while (!port->ops->tx_empty(port)) {
+	for (;;) {
+		bool done;
+
+		uart_port_deref(port);
+		mutex_lock(&state->port.mutex);
+		port = uart_port_ref(state);
+		done = !port || tty_io_error(tty) || port->ops->tx_empty(port);
+		mutex_unlock(&state->port.mutex);
+		if (done)
+			break;
+
 		msleep_interruptible(jiffies_to_msecs(char_time));
 		if (signal_pending(current))
 			break;
 		if (timeout && time_after(jiffies, expire))
 			break;
 	}
-	uart_port_deref(port);
+	if (port)
+		uart_port_deref(port);
 }
 
 /*
