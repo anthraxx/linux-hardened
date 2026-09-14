@@ -470,6 +470,8 @@ patternProperties:
     description: Baoding Forlinx Embedded Technology Co., Ltd.
   "^freecom,.*":
     description: Freecom Gmbh
+  "^freemobile,.*":
+    description: Free Mobile
   "^frida,.*":
     description: Shenzhen Frida LCD Co., Ltd.
   "^friendlyarm,.*":
