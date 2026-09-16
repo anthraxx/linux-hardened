@@ -1653,6 +1653,9 @@ enum dc_status dm_dp_mst_is_port_support_mode(
 	struct dc_dsc_bw_range bw_range = {0};
 	uint16_t full_pbn = aconnector->mst_output_port->full_pbn;
 
+	if (!aconnector->dc_sink)
+		return DC_FAIL_BANDWIDTH_VALIDATE;
+
 	/*
 	 * Consider the case with the depth of the mst topology tree is equal or less than 2
 	 * A. When dsc bitstream can be transmitted along the entire path
