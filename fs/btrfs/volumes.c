@@ -8485,6 +8485,7 @@ out:
 int btrfs_repair_one_zone(struct btrfs_fs_info *fs_info, u64 logical)
 {
 	struct btrfs_block_group *cache;
+	struct task_struct *task;
 
 	/* Do not attempt to repair in degraded state */
 	if (btrfs_test_opt(fs_info, DEGRADED))
@@ -8503,8 +8504,9 @@ int btrfs_repair_one_zone(struct btrfs_fs_info *fs_info, u64 logical)
 	cache->relocating_repair = 1;
 	spin_unlock(&cache->lock);
 
-	kthread_run(relocating_repair_kthread, cache,
-		    "btrfs-relocating-repair");
+	task = kthread_run(relocating_repair_kthread, cache, "btrfs-relocating-repair");
+	if (IS_ERR(task))
+		btrfs_put_block_group(cache);
 
 	return 0;
 }
