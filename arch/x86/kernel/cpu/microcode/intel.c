@@ -261,6 +261,23 @@ static int microcode_sanity_check(void *mc, int print_err)
 	return 0;
 }
 
+static bool revision_is_safe(struct cpu_signature *sig, u32 rev)
+{
+	/*
+	 * Erratum GNR98 can cause #MCs if "jumping over" revision 0x1000405.
+	 * Avoid the jumps.
+	 */
+	if (x86_family(sig->sig) == 6 &&
+	    x86_model(sig->sig) == INTEL_FAM6_GRANITERAPIDS_X &&
+	    x86_stepping(sig->sig) == 1 &&
+	    sig->pf & 0x95 &&
+	    sig->rev < 0x1000405 &&
+	    rev > 0x1000405)
+		return false;
+
+	return true;
+}
+
 /*
  * Get microcode matching with BSP's model. Only CPUs with the same model as
  * BSP can stay in the platform.
@@ -292,8 +309,19 @@ scan_microcode(void *data, size_t size, struct ucode_cpu_info *uci, bool save)
 			continue;
 		}
 
+		if (!revision_is_safe(&uci->cpu_sig, mc_header->rev)) {
+			data += mc_size;
+			continue;
+		}
+
 		if (save) {
-			save_microcode_patch(uci, data, mc_size);
+			/*
+			 * Only cache what the BSP could have loaded: a newer
+			 * revision was rejected as unsafe and must not be
+			 * applied on resume or hotplug.
+			 */
+			if (mc_header->rev <= uci->cpu_sig.rev)
+				save_microcode_patch(uci, data, mc_size);
 			goto next;
 		}
 
@@ -629,6 +657,11 @@ void load_ucode_intel_ap(void)
 		*iup = patch;
 	}
 
+	intel_cpu_collect_info(&uci);
+
+	if (!revision_is_safe(&uci.cpu_sig, (*iup)->hdr.rev))
+		return;
+
 	uci.mc = *iup;
 
 	apply_microcode_early(&uci, true);
@@ -644,6 +677,9 @@ static struct microcode_intel *find_patch(struct ucode_cpu_info *uci)
 		phdr = (struct microcode_header_intel *)iter->data;
 
 		if (phdr->rev <= uci->cpu_sig.rev)
+			continue;
+
+		if (!revision_is_safe(&uci->cpu_sig, phdr->rev))
 			continue;
 
 		if (!find_matching_signature(phdr,
@@ -706,6 +742,7 @@ static enum ucode_state apply_microcode_intel(int cpu)
 	struct cpuinfo_x86 *c = &cpu_data(cpu);
 	bool bsp = c->cpu_index == boot_cpu_data.cpu_index;
 	struct microcode_intel *mc;
+	struct cpu_signature sig;
 	enum ucode_state ret;
 	static int prev_rev;
 	u32 rev;
@@ -730,6 +767,17 @@ static enum ucode_state apply_microcode_intel(int cpu)
 	rev = intel_get_microcode_revision();
 	if (rev >= mc->hdr.rev) {
 		ret = UCODE_OK;
+		goto out;
+	}
+
+	/*
+	 * uci->cpu_sig.rev can be stale, e.g. on resume. Check against the
+	 * revision the CPU is really running.
+	 */
+	sig = uci->cpu_sig;
+	sig.rev = rev;
+	if (!revision_is_safe(&sig, mc->hdr.rev)) {
+		ret = UCODE_NFOUND;
 		goto out;
 	}
 
@@ -816,6 +864,11 @@ static enum ucode_state generic_load_microcode(int cpu, struct iov_iter *iter)
 		if (!copy_from_iter_full(data, data_size, iter) ||
 		    microcode_sanity_check(mc, 1) < 0) {
 			break;
+		}
+
+		if (!revision_is_safe(&uci->cpu_sig, mc_header.rev)) {
+			pr_err_once("Erratum GNR98: skipping revision 0x%x.\n", mc_header.rev);
+			continue;
 		}
 
 		csig = uci->cpu_sig.sig;
