@@ -1727,6 +1727,10 @@ static int rtrs_rdma_conn_established(struct rtrs_clt_con *con,
 	}
 	if (con->c.cid == 0) {
 		queue_depth = le16_to_cpu(msg->queue_depth);
+		if (!queue_depth) {
+			rtrs_err(clt, "Invalid queue depth %u\n", queue_depth);
+			return -ECONNRESET;
+		}
 
 		if (sess->queue_depth > 0 && queue_depth != sess->queue_depth) {
 			rtrs_err(clt, "Error: queue depth changed\n");
