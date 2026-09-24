@@ -24,6 +24,9 @@
 #include <net/ip6_route.h>
 #endif
 
+/* Maximum nesting depth for recursive IP tunnel processing */
+#define IP_TUNNEL_RECURSION_LIMIT	5
+
 /* Keep error state on tunnel for 30 sec */
 #define IPTUNNEL_ERR_TIMEO	(30*HZ)
 
