@@ -1354,6 +1354,7 @@
         "EventName": "UNC_CHA_LLC_LOOKUP.ANY_F",
         "PerPkg": "1",
         "PublicDescription": "Cache Lookups : All Request Filter : Counts the number of times the LLC was accessed - this includes code, data, prefetches and hints coming from L2.  This has numerous filters available.  Note the non-standard filtering equation.  This event will count requests that lookup the cache multiple times with multiple increments.  One must ALWAYS select a state or states (in the umask field) to match.  Otherwise, the event will count nothing. : Any local or remote transaction to the LLC, including prefetch.",
+        "UMask": "0x2000",
         "Unit": "CHA"
     },
     {
@@ -1380,6 +1381,7 @@
         "EventName": "UNC_CHA_LLC_LOOKUP.CODE_READ_F",
         "PerPkg": "1",
         "PublicDescription": "Cache Lookups : CRd Request Filter : Counts the number of times the LLC was accessed - this includes code, data, prefetches and hints coming from L2.  This has numerous filters available.  Note the non-standard filtering equation.  This event will count requests that lookup the cache multiple times with multiple increments.  One must ALWAYS select a state or states (in the umask field) to match.  Otherwise, the event will count nothing. : Local or remote CRd transactions to the LLC.  This includes CRd prefetch.",
+        "UMask": "0x1000",
         "Unit": "CHA"
     },
     {
@@ -1397,6 +1399,7 @@
         "EventName": "UNC_CHA_LLC_LOOKUP.COREPREF_OR_DMND_LOCAL_F",
         "PerPkg": "1",
         "PublicDescription": "Cache Lookups : Local request Filter : Counts the number of times the LLC was accessed - this includes code, data, prefetches and hints coming from L2.  This has numerous filters available.  Note the non-standard filtering equation.  This event will count requests that lookup the cache multiple times with multiple increments.  One must ALWAYS select a state or states (in the umask field) to match.  Otherwise, the event will count nothing. : Any local transaction to the LLC, including prefetches from the Core",
+        "UMask": "0x4000",
         "Unit": "CHA"
     },
     {
@@ -1432,6 +1435,7 @@
         "EventName": "UNC_CHA_LLC_LOOKUP.DATA_READ_F",
         "PerPkg": "1",
         "PublicDescription": "Cache Lookups : Data Read Request Filter : Counts the number of times the LLC was accessed - this includes code, data, prefetches and hints coming from L2.  This has numerous filters available.  Note the non-standard filtering equation.  This event will count requests that lookup the cache multiple times with multiple increments.  One must ALWAYS select a state or states (in the umask field) to match.  Otherwise, the event will count nothing. : Read transactions.",
+        "UMask": "0x100",
         "Unit": "CHA"
     },
     {
@@ -1485,6 +1489,7 @@
         "EventName": "UNC_CHA_LLC_LOOKUP.FLUSH_OR_INV_F",
         "PerPkg": "1",
         "PublicDescription": "Cache Lookups : Flush or Invalidate Filter : Counts the number of times the LLC was accessed - this includes code, data, prefetches and hints coming from L2.  This has numerous filters available.  Note the non-standard filtering equation.  This event will count requests that lookup the cache multiple times with multiple increments.  One must ALWAYS select a state or states (in the umask field) to match.  Otherwise, the event will count nothing.",
+        "UMask": "0x400",
         "Unit": "CHA"
     },
     {
@@ -1502,6 +1507,7 @@
         "EventName": "UNC_CHA_LLC_LOOKUP.LOCAL_F",
         "PerPkg": "1",
         "PublicDescription": "Cache Lookups : Transactions homed locally Filter : Counts the number of times the LLC was accessed - this includes code, data, prefetches and hints coming from L2.  This has numerous filters available.  Note the non-standard filtering equation.  This event will count requests that lookup the cache multiple times with multiple increments.  One must ALWAYS select a state or states (in the umask field) to match.  Otherwise, the event will count nothing. : Transaction whose address resides in the local MC.",
+        "UMask": "0x80000",
         "Unit": "CHA"
     },
     {
@@ -1528,6 +1534,7 @@
         "EventName": "UNC_CHA_LLC_LOOKUP.OTHER_REQ_F",
         "PerPkg": "1",
         "PublicDescription": "Cache Lookups : Write Request Filter : Counts the number of times the LLC was accessed - this includes code, data, prefetches and hints coming from L2.  This has numerous filters available.  Note the non-standard filtering equation.  This event will count requests that lookup the cache multiple times with multiple increments.  One must ALWAYS select a state or states (in the umask field) to match.  Otherwise, the event will count nothing. : Writeback transactions to the LLC  This includes all write transactions -- both Cacheable and UC.",
+        "UMask": "0x200",
         "Unit": "CHA"
     },
     {
@@ -1626,6 +1633,7 @@
         "EventName": "UNC_CHA_LLC_LOOKUP.RFO_F",
         "PerPkg": "1",
         "PublicDescription": "Cache Lookups : RFO Request Filter : Counts the number of times the LLC was accessed - this includes code, data, prefetches and hints coming from L2.  This has numerous filters available.  Note the non-standard filtering equation.  This event will count requests that lookup the cache multiple times with multiple increments.  One must ALWAYS select a state or states (in the umask field) to match.  Otherwise, the event will count nothing. : Local or remote RFO transactions to the LLC.  This includes RFO prefetch.",
+        "UMask": "0x800",
         "Unit": "CHA"
     },
     {
@@ -1751,6 +1759,7 @@
         "EventName": "UNC_CHA_LLC_VICTIMS.LOCAL_ONLY",
         "PerPkg": "1",
         "PublicDescription": "Lines Victimized : Local Only : Counts the number of lines that were victimized on a fill.  This can be filtered by the state that the line was in.",
+        "UMask": "0x2000",
         "Unit": "CHA"
     },
     {
@@ -1847,6 +1856,7 @@
         "EventName": "UNC_CHA_PIPE_REJECT.ADEGRCREDIT",
         "PerPkg": "1",
         "PublicDescription": "Pipe Rejects : More Miscellaneous events in the Cbo.",
+        "UMask": "0x10000000",
         "Unit": "CHA"
     },
     {
@@ -1855,6 +1865,7 @@
         "EventName": "UNC_CHA_PIPE_REJECT.AKEGRCREDIT",
         "PerPkg": "1",
         "PublicDescription": "Pipe Rejects : More Miscellaneous events in the Cbo.",
+        "UMask": "0x20000000",
         "Unit": "CHA"
     },
     {
@@ -1863,6 +1874,7 @@
         "EventName": "UNC_CHA_PIPE_REJECT.ALLRSFWAYS_RES",
         "PerPkg": "1",
         "PublicDescription": "Pipe Rejects : More Miscellaneous events in the Cbo.",
+        "UMask": "0x80000",
         "Unit": "CHA"
     },
     {
@@ -1871,6 +1883,7 @@
         "EventName": "UNC_CHA_PIPE_REJECT.BLEGRCREDIT",
         "PerPkg": "1",
         "PublicDescription": "Pipe Rejects : More Miscellaneous events in the Cbo.",
+        "UMask": "0x8000000",
         "Unit": "CHA"
     },
     {
@@ -1879,6 +1892,7 @@
         "EventName": "UNC_CHA_PIPE_REJECT.FSF_VICP",
         "PerPkg": "1",
         "PublicDescription": "Pipe Rejects : More Miscellaneous events in the Cbo.",
+        "UMask": "0x200",
         "Unit": "CHA"
     },
     {
@@ -1923,6 +1937,7 @@
         "EventName": "UNC_CHA_PIPE_REJECT.HACREDIT",
         "PerPkg": "1",
         "PublicDescription": "Pipe Rejects : More Miscellaneous events in the Cbo.",
+        "UMask": "0x40000000",
         "Unit": "CHA"
     },
     {
@@ -1931,6 +1946,7 @@
         "EventName": "UNC_CHA_PIPE_REJECT.IDX_INPIPE",
         "PerPkg": "1",
         "PublicDescription": "Pipe Rejects : More Miscellaneous events in the Cbo.",
+        "UMask": "0x10000",
         "Unit": "CHA"
     },
     {
@@ -1939,6 +1955,7 @@
         "EventName": "UNC_CHA_PIPE_REJECT.IPQ_SETMATCH_VICP",
         "PerPkg": "1",
         "PublicDescription": "Pipe Rejects : More Miscellaneous events in the Cbo.",
+        "UMask": "0x2000",
         "Unit": "CHA"
     },
     {
@@ -1947,6 +1964,7 @@
         "EventName": "UNC_CHA_PIPE_REJECT.IRQ_SETMATCH_VICP",
         "PerPkg": "1",
         "PublicDescription": "Pipe Rejects : More Miscellaneous events in the Cbo.",
+        "UMask": "0x100",
         "Unit": "CHA"
     },
     {
@@ -1955,6 +1973,7 @@
         "EventName": "UNC_CHA_PIPE_REJECT.ISMQ_SETMATCH_VICP",
         "PerPkg": "1",
         "PublicDescription": "Pipe Rejects : More Miscellaneous events in the Cbo.",
+        "UMask": "0x200000",
         "Unit": "CHA"
     },
     {
@@ -1963,6 +1982,7 @@
         "EventName": "UNC_CHA_PIPE_REJECT.IVEGRCREDIT",
         "PerPkg": "1",
         "PublicDescription": "Pipe Rejects : More Miscellaneous events in the Cbo.",
+        "UMask": "0x4000000",
         "Unit": "CHA"
     },
     {
@@ -1971,6 +1991,7 @@
         "EventName": "UNC_CHA_PIPE_REJECT.LLC_WAYS_RES",
         "PerPkg": "1",
         "PublicDescription": "Pipe Rejects : More Miscellaneous events in the Cbo.",
+        "UMask": "0x800000",
         "Unit": "CHA"
     },
     {
@@ -1979,6 +2000,7 @@
         "EventName": "UNC_CHA_PIPE_REJECT.NOTALLOWSNOOP",
         "PerPkg": "1",
         "PublicDescription": "Pipe Rejects : More Miscellaneous events in the Cbo.",
+        "UMask": "0x1000000",
         "Unit": "CHA"
     },
     {
@@ -1987,6 +2009,7 @@
         "EventName": "UNC_CHA_PIPE_REJECT.ONE_FSF_VIC",
         "PerPkg": "1",
         "PublicDescription": "Pipe Rejects : More Miscellaneous events in the Cbo.",
+        "UMask": "0x400",
         "Unit": "CHA"
     },
     {
@@ -1995,6 +2018,7 @@
         "EventName": "UNC_CHA_PIPE_REJECT.ONE_RSP_CON",
         "PerPkg": "1",
         "PublicDescription": "Pipe Rejects : More Miscellaneous events in the Cbo.",
+        "UMask": "0x8000",
         "Unit": "CHA"
     },
     {
@@ -2021,6 +2045,7 @@
         "EventName": "UNC_CHA_PIPE_REJECT.RRQ_SETMATCH_VICP",
         "PerPkg": "1",
         "PublicDescription": "Pipe Rejects : More Miscellaneous events in the Cbo.",
+        "UMask": "0x100000",
         "Unit": "CHA"
     },
     {
@@ -2029,6 +2054,7 @@
         "EventName": "UNC_CHA_PIPE_REJECT.SETMATCHENTRYWSCT",
         "PerPkg": "1",
         "PublicDescription": "Pipe Rejects : More Miscellaneous events in the Cbo.",
+        "UMask": "0x20000",
         "Unit": "CHA"
     },
     {
@@ -2037,6 +2063,7 @@
         "EventName": "UNC_CHA_PIPE_REJECT.SF_WAYS_RES",
         "PerPkg": "1",
         "PublicDescription": "Pipe Rejects : More Miscellaneous events in the Cbo.",
+        "UMask": "0x400000",
         "Unit": "CHA"
     },
     {
@@ -2045,6 +2072,7 @@
         "EventName": "UNC_CHA_PIPE_REJECT.TOPA_MATCH",
         "PerPkg": "1",
         "PublicDescription": "Pipe Rejects : More Miscellaneous events in the Cbo.",
+        "UMask": "0x2000000",
         "Unit": "CHA"
     },
     {
@@ -2053,6 +2081,7 @@
         "EventName": "UNC_CHA_PIPE_REJECT.TORID_MATCH_GO_P",
         "PerPkg": "1",
         "PublicDescription": "Pipe Rejects : More Miscellaneous events in the Cbo.",
+        "UMask": "0x1000",
         "Unit": "CHA"
     },
     {
@@ -2061,6 +2090,7 @@
         "EventName": "UNC_CHA_PIPE_REJECT.VN_AD_REQ",
         "PerPkg": "1",
         "PublicDescription": "Pipe Rejects : More Miscellaneous events in the Cbo.",
+        "UMask": "0x80000000",
         "Unit": "CHA"
     },
     {
@@ -2069,6 +2099,7 @@
         "EventName": "UNC_CHA_PIPE_REJECT.VN_AD_RSP",
         "PerPkg": "1",
         "PublicDescription": "Pipe Rejects : More Miscellaneous events in the Cbo.",
+        "UMask": "0x100000000",
         "Unit": "CHA"
     },
     {
@@ -2093,6 +2124,7 @@
         "EventName": "UNC_CHA_PIPE_REJECT.VN_BL_RSP",
         "PerPkg": "1",
         "PublicDescription": "Pipe Rejects : More Miscellaneous events in the Cbo.",
+        "UMask": "0x200000000",
         "Unit": "CHA"
     },
     {
@@ -2109,6 +2141,7 @@
         "EventName": "UNC_CHA_PIPE_REJECT.WAY_MATCH",
         "PerPkg": "1",
         "PublicDescription": "Pipe Rejects : More Miscellaneous events in the Cbo.",
+        "UMask": "0x4000",
         "Unit": "CHA"
     },
     {
@@ -2135,6 +2168,7 @@
         "EventName": "UNC_CHA_READ_NO_CREDITS.MC10",
         "PerPkg": "1",
         "PublicDescription": "CHA iMC CHNx READ Credits Empty : MC10 : Counts the number of times when there are no credits available for sending reads from the CHA into the iMC.  In order to send reads into the memory controller, the HA must first acquire a credit for the iMC's AD Ingress queue. : Filter for memory controller 10 only.",
+        "UMask": "0x400",
         "Unit": "CHA"
     },
     {
@@ -2143,6 +2177,7 @@
         "EventName": "UNC_CHA_READ_NO_CREDITS.MC11",
         "PerPkg": "1",
         "PublicDescription": "CHA iMC CHNx READ Credits Empty : MC11 : Counts the number of times when there are no credits available for sending reads from the CHA into the iMC.  In order to send reads into the memory controller, the HA must first acquire a credit for the iMC's AD Ingress queue. : Filter for memory controller 11 only.",
+        "UMask": "0x800",
         "Unit": "CHA"
     },
     {
@@ -2151,6 +2186,7 @@
         "EventName": "UNC_CHA_READ_NO_CREDITS.MC12",
         "PerPkg": "1",
         "PublicDescription": "CHA iMC CHNx READ Credits Empty : MC12 : Counts the number of times when there are no credits available for sending reads from the CHA into the iMC.  In order to send reads into the memory controller, the HA must first acquire a credit for the iMC's AD Ingress queue. : Filter for memory controller 12 only.",
+        "UMask": "0x1000",
         "Unit": "CHA"
     },
     {
@@ -2159,6 +2195,7 @@
         "EventName": "UNC_CHA_READ_NO_CREDITS.MC13",
         "PerPkg": "1",
         "PublicDescription": "CHA iMC CHNx READ Credits Empty : MC13 : Counts the number of times when there are no credits available for sending reads from the CHA into the iMC.  In order to send reads into the memory controller, the HA must first acquire a credit for the iMC's AD Ingress queue. : Filter for memory controller 13 only.",
+        "UMask": "0x2000",
         "Unit": "CHA"
     },
     {
@@ -2221,6 +2258,7 @@
         "EventName": "UNC_CHA_READ_NO_CREDITS.MC8",
         "PerPkg": "1",
         "PublicDescription": "CHA iMC CHNx READ Credits Empty : MC8 : Counts the number of times when there are no credits available for sending reads from the CHA into the iMC.  In order to send reads into the memory controller, the HA must first acquire a credit for the iMC's AD Ingress queue. : Filter for memory controller 8 only.",
+        "UMask": "0x100",
         "Unit": "CHA"
     },
     {
@@ -2229,6 +2267,7 @@
         "EventName": "UNC_CHA_READ_NO_CREDITS.MC9",
         "PerPkg": "1",
         "PublicDescription": "CHA iMC CHNx READ Credits Empty : MC9 : Counts the number of times when there are no credits available for sending reads from the CHA into the iMC.  In order to send reads into the memory controller, the HA must first acquire a credit for the iMC's AD Ingress queue. : Filter for memory controller 9 only.",
+        "UMask": "0x200",
         "Unit": "CHA"
     },
     {
@@ -4198,6 +4237,7 @@
         "EventName": "UNC_CHA_TOR_INSERTS.DDR",
         "PerPkg": "1",
         "PublicDescription": "TOR Inserts : DDR4 Access : Counts the number of entries successfully inserted into the TOR that match qualifications specified by the subevent.   Does not include addressless requests such as locks and interrupts.",
+        "UMask": "0x400",
         "Unit": "CHA"
     },
     {
@@ -4206,6 +4246,7 @@
         "EventCode": "0x35",
         "EventName": "UNC_CHA_TOR_INSERTS.DDR4",
         "PerPkg": "1",
+        "UMask": "0x400",
         "Unit": "CHA"
     },
     {
@@ -4223,6 +4264,7 @@
         "EventName": "UNC_CHA_TOR_INSERTS.HIT",
         "PerPkg": "1",
         "PublicDescription": "TOR Inserts : Just Hits : Counts the number of entries successfully inserted into the TOR that match qualifications specified by the subevent.   Does not include addressless requests such as locks and interrupts.",
+        "UMask": "0x100",
         "Unit": "CHA"
     },
     {
@@ -4753,6 +4795,7 @@
         "EventName": "UNC_CHA_TOR_INSERTS.ISOC",
         "PerPkg": "1",
         "PublicDescription": "TOR Inserts : Just ISOC : Counts the number of entries successfully inserted into the TOR that match qualifications specified by the subevent.   Does not include addressless requests such as locks and interrupts.",
+        "UMask": "0x200000000",
         "Unit": "CHA"
     },
     {
@@ -4761,6 +4804,7 @@
         "EventName": "UNC_CHA_TOR_INSERTS.LOCAL_TGT",
         "PerPkg": "1",
         "PublicDescription": "TOR Inserts : Just Local Targets : Counts the number of entries successfully inserted into the TOR that match qualifications specified by the subevent.   Does not include addressless requests such as locks and interrupts.",
+        "UMask": "0x8000",
         "Unit": "CHA"
     },
     {
@@ -4796,6 +4840,7 @@
         "EventName": "UNC_CHA_TOR_INSERTS.MATCH_OPC",
         "PerPkg": "1",
         "PublicDescription": "TOR Inserts : Match the Opcode in b[29:19] of the extended umask field : Counts the number of entries successfully inserted into the TOR that match qualifications specified by the subevent.   Does not include addressless requests such as locks and interrupts.",
+        "UMask": "0x20000",
         "Unit": "CHA"
     },
     {
@@ -4804,6 +4849,7 @@
         "EventName": "UNC_CHA_TOR_INSERTS.MISS",
         "PerPkg": "1",
         "PublicDescription": "TOR Inserts : Just Misses : Counts the number of entries successfully inserted into the TOR that match qualifications specified by the subevent.   Does not include addressless requests such as locks and interrupts.",
+        "UMask": "0x200",
         "Unit": "CHA"
     },
     {
@@ -4812,6 +4858,7 @@
         "EventName": "UNC_CHA_TOR_INSERTS.MMCFG",
         "PerPkg": "1",
         "PublicDescription": "TOR Inserts : MMCFG Access : Counts the number of entries successfully inserted into the TOR that match qualifications specified by the subevent.   Does not include addressless requests such as locks and interrupts.",
+        "UMask": "0x2000",
         "Unit": "CHA"
     },
     {
@@ -4820,6 +4867,7 @@
         "EventName": "UNC_CHA_TOR_INSERTS.NEARMEM",
         "PerPkg": "1",
         "PublicDescription": "TOR Inserts : Just NearMem : Counts the number of entries successfully inserted into the TOR that match qualifications specified by the subevent.   Does not include addressless requests such as locks and interrupts.",
+        "UMask": "0x40000000",
         "Unit": "CHA"
     },
     {
@@ -4828,6 +4876,7 @@
         "EventName": "UNC_CHA_TOR_INSERTS.NONCOH",
         "PerPkg": "1",
         "PublicDescription": "TOR Inserts : Just NonCoherent : Counts the number of entries successfully inserted into the TOR that match qualifications specified by the subevent.   Does not include addressless requests such as locks and interrupts.",
+        "UMask": "0x100000000",
         "Unit": "CHA"
     },
     {
@@ -4836,6 +4885,7 @@
         "EventName": "UNC_CHA_TOR_INSERTS.NOT_NEARMEM",
         "PerPkg": "1",
         "PublicDescription": "TOR Inserts : Just NotNearMem : Counts the number of entries successfully inserted into the TOR that match qualifications specified by the subevent.   Does not include addressless requests such as locks and interrupts.",
+        "UMask": "0x80000000",
         "Unit": "CHA"
     },
     {
@@ -4844,6 +4894,7 @@
         "EventName": "UNC_CHA_TOR_INSERTS.PREMORPH_OPC",
         "PerPkg": "1",
         "PublicDescription": "TOR Inserts : Match the PreMorphed Opcode in b[29:19] of the extended umask field : Counts the number of entries successfully inserted into the TOR that match qualifications specified by the subevent.   Does not include addressless requests such as locks and interrupts.",
+        "UMask": "0x40000",
         "Unit": "CHA"
     },
     {
@@ -4870,6 +4921,7 @@
         "EventName": "UNC_CHA_TOR_OCCUPANCY.DDR",
         "PerPkg": "1",
         "PublicDescription": "TOR Occupancy : DDR4 Access : For each cycle, this event accumulates the number of valid entries in the TOR that match qualifications specified by the subevent.     Does not include addressless requests such as locks and interrupts.",
+        "UMask": "0x400",
         "Unit": "CHA"
     },
     {
@@ -4887,6 +4939,7 @@
         "EventName": "UNC_CHA_TOR_OCCUPANCY.HIT",
         "PerPkg": "1",
         "PublicDescription": "TOR Occupancy : Just Hits : For each cycle, this event accumulates the number of valid entries in the TOR that match qualifications specified by the subevent.     Does not include addressless requests such as locks and interrupts.",
+        "UMask": "0x100",
         "Unit": "CHA"
     },
     {
@@ -5381,6 +5434,7 @@
         "EventName": "UNC_CHA_TOR_OCCUPANCY.ISOC",
         "PerPkg": "1",
         "PublicDescription": "TOR Occupancy : Just ISOC : For each cycle, this event accumulates the number of valid entries in the TOR that match qualifications specified by the subevent.     Does not include addressless requests such as locks and interrupts.",
+        "UMask": "0x200000000",
         "Unit": "CHA"
     },
     {
@@ -5389,6 +5443,7 @@
         "EventName": "UNC_CHA_TOR_OCCUPANCY.LOCAL_TGT",
         "PerPkg": "1",
         "PublicDescription": "TOR Occupancy : Just Local Targets : For each cycle, this event accumulates the number of valid entries in the TOR that match qualifications specified by the subevent.     Does not include addressless requests such as locks and interrupts.",
+        "UMask": "0x8000",
         "Unit": "CHA"
     },
     {
@@ -5424,6 +5479,7 @@
         "EventName": "UNC_CHA_TOR_OCCUPANCY.MATCH_OPC",
         "PerPkg": "1",
         "PublicDescription": "TOR Occupancy : Match the Opcode in b[29:19] of the extended umask field : For each cycle, this event accumulates the number of valid entries in the TOR that match qualifications specified by the subevent.     Does not include addressless requests such as locks and interrupts.",
+        "UMask": "0x20000",
         "Unit": "CHA"
     },
     {
@@ -5432,6 +5488,7 @@
         "EventName": "UNC_CHA_TOR_OCCUPANCY.MISS",
         "PerPkg": "1",
         "PublicDescription": "TOR Occupancy : Just Misses : For each cycle, this event accumulates the number of valid entries in the TOR that match qualifications specified by the subevent.     Does not include addressless requests such as locks and interrupts.",
+        "UMask": "0x200",
         "Unit": "CHA"
     },
     {
@@ -5440,6 +5497,7 @@
         "EventName": "UNC_CHA_TOR_OCCUPANCY.MMCFG",
         "PerPkg": "1",
         "PublicDescription": "TOR Occupancy : MMCFG Access : For each cycle, this event accumulates the number of valid entries in the TOR that match qualifications specified by the subevent.     Does not include addressless requests such as locks and interrupts.",
+        "UMask": "0x2000",
         "Unit": "CHA"
     },
     {
@@ -5448,6 +5506,7 @@
         "EventName": "UNC_CHA_TOR_OCCUPANCY.NEARMEM",
         "PerPkg": "1",
         "PublicDescription": "TOR Occupancy : Just NearMem : For each cycle, this event accumulates the number of valid entries in the TOR that match qualifications specified by the subevent.     Does not include addressless requests such as locks and interrupts.",
+        "UMask": "0x40000000",
         "Unit": "CHA"
     },
     {
@@ -5456,6 +5515,7 @@
         "EventName": "UNC_CHA_TOR_OCCUPANCY.NONCOH",
         "PerPkg": "1",
         "PublicDescription": "TOR Occupancy : Just NonCoherent : For each cycle, this event accumulates the number of valid entries in the TOR that match qualifications specified by the subevent.     Does not include addressless requests such as locks and interrupts.",
+        "UMask": "0x100000000",
         "Unit": "CHA"
     },
     {
@@ -5464,6 +5524,7 @@
         "EventName": "UNC_CHA_TOR_OCCUPANCY.NOT_NEARMEM",
         "PerPkg": "1",
         "PublicDescription": "TOR Occupancy : Just NotNearMem : For each cycle, this event accumulates the number of valid entries in the TOR that match qualifications specified by the subevent.     Does not include addressless requests such as locks and interrupts.",
+        "UMask": "0x80000000",
         "Unit": "CHA"
     },
     {
@@ -5472,6 +5533,7 @@
         "EventName": "UNC_CHA_TOR_OCCUPANCY.PREMORPH_OPC",
         "PerPkg": "1",
         "PublicDescription": "TOR Occupancy : Match the PreMorphed Opcode in b[29:19] of the extended umask field : For each cycle, this event accumulates the number of valid entries in the TOR that match qualifications specified by the subevent.     Does not include addressless requests such as locks and interrupts.",
+        "UMask": "0x40000",
         "Unit": "CHA"
     },
     {
@@ -6947,6 +7009,7 @@
         "EventName": "UNC_CHA_WRITE_NO_CREDITS.MC10",
         "PerPkg": "1",
         "PublicDescription": "CHA iMC CHNx WRITE Credits Empty : MC10 : Counts the number of times when there are no credits available for sending WRITEs from the CHA into the iMC.  In order to send WRITEs into the memory controller, the HA must first acquire a credit for the iMC's BL Ingress queue. : Filter for memory controller 10 only.",
+        "UMask": "0x400",
         "Unit": "CHA"
     },
     {
@@ -6955,6 +7018,7 @@
         "EventName": "UNC_CHA_WRITE_NO_CREDITS.MC11",
         "PerPkg": "1",
         "PublicDescription": "CHA iMC CHNx WRITE Credits Empty : MC11 : Counts the number of times when there are no credits available for sending WRITEs from the CHA into the iMC.  In order to send WRITEs into the memory controller, the HA must first acquire a credit for the iMC's BL Ingress queue. : Filter for memory controller 11 only.",
+        "UMask": "0x800",
         "Unit": "CHA"
     },
     {
@@ -6963,6 +7027,7 @@
         "EventName": "UNC_CHA_WRITE_NO_CREDITS.MC12",
         "PerPkg": "1",
         "PublicDescription": "CHA iMC CHNx WRITE Credits Empty : MC12 : Counts the number of times when there are no credits available for sending WRITEs from the CHA into the iMC.  In order to send WRITEs into the memory controller, the HA must first acquire a credit for the iMC's BL Ingress queue. : Filter for memory controller 12 only.",
+        "UMask": "0x1000",
         "Unit": "CHA"
     },
     {
@@ -6971,6 +7036,7 @@
         "EventName": "UNC_CHA_WRITE_NO_CREDITS.MC13",
         "PerPkg": "1",
         "PublicDescription": "CHA iMC CHNx WRITE Credits Empty : MC13 : Counts the number of times when there are no credits available for sending WRITEs from the CHA into the iMC.  In order to send WRITEs into the memory controller, the HA must first acquire a credit for the iMC's BL Ingress queue. : Filter for memory controller 13 only.",
+        "UMask": "0x2000",
         "Unit": "CHA"
     },
     {
@@ -7033,6 +7099,7 @@
         "EventName": "UNC_CHA_WRITE_NO_CREDITS.MC8",
         "PerPkg": "1",
         "PublicDescription": "CHA iMC CHNx WRITE Credits Empty : MC8 : Counts the number of times when there are no credits available for sending WRITEs from the CHA into the iMC.  In order to send WRITEs into the memory controller, the HA must first acquire a credit for the iMC's BL Ingress queue. : Filter for memory controller 8 only.",
+        "UMask": "0x100",
         "Unit": "CHA"
     },
     {
@@ -7041,6 +7108,7 @@
         "EventName": "UNC_CHA_WRITE_NO_CREDITS.MC9",
         "PerPkg": "1",
         "PublicDescription": "CHA iMC CHNx WRITE Credits Empty : MC9 : Counts the number of times when there are no credits available for sending WRITEs from the CHA into the iMC.  In order to send WRITEs into the memory controller, the HA must first acquire a credit for the iMC's BL Ingress queue. : Filter for memory controller 9 only.",
+        "UMask": "0x200",
         "Unit": "CHA"
     },
     {
