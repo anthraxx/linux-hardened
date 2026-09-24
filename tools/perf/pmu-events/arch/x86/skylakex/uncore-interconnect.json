@@ -10998,6 +10998,7 @@
         "EventCode": "0x4",
         "EventName": "UNC_UPI_TxL_HDR_MATCH.DATA_HDR",
         "PerPkg": "1",
+        "UMask": "0x800",
         "Unit": "UPI"
     },
     {
@@ -11006,6 +11007,7 @@
         "EventCode": "0x4",
         "EventName": "UNC_UPI_TxL_HDR_MATCH.DUAL_SLOT_HDR",
         "PerPkg": "1",
+        "UMask": "0x2000",
         "Unit": "UPI"
     },
     {
@@ -11014,6 +11016,7 @@
         "EventCode": "0x4",
         "EventName": "UNC_UPI_TxL_HDR_MATCH.LOC",
         "PerPkg": "1",
+        "UMask": "0x200",
         "Unit": "UPI"
     },
     {
@@ -11040,6 +11043,7 @@
         "EventCode": "0x4",
         "EventName": "UNC_UPI_TxL_HDR_MATCH.NON_DATA_HDR",
         "PerPkg": "1",
+        "UMask": "0x1000",
         "Unit": "UPI"
     },
     {
@@ -11048,6 +11052,7 @@
         "EventCode": "0x4",
         "EventName": "UNC_UPI_TxL_HDR_MATCH.REM",
         "PerPkg": "1",
+        "UMask": "0x400",
         "Unit": "UPI"
     },
     {
@@ -11083,6 +11088,7 @@
         "EventCode": "0x4",
         "EventName": "UNC_UPI_TxL_HDR_MATCH.SGL_SLOT_HDR",
         "PerPkg": "1",
+        "UMask": "0x4000",
         "Unit": "UPI"
     },
     {
