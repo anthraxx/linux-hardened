@@ -388,6 +388,7 @@ static ssize_t rng_current_store(struct device *dev,
 	if (sysfs_streq(buf, "")) {
 		err = enable_best_rng();
 	} else {
+		err = -ENODEV;
 		list_for_each_entry(rng, &rng_list, list) {
 			if (sysfs_streq(rng->name, buf)) {
 				err = set_current_rng(rng);
