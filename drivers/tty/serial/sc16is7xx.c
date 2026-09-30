@@ -242,6 +242,8 @@
 #define SC16IS7XX_TLR_TX_TRIGGER(words)	((((words) / 4) & 0x0f) << 0)
 #define SC16IS7XX_TLR_RX_TRIGGER(words)	((((words) / 4) & 0x0f) << 4)
 
+#define SC16IS7XX_TX_TRIGGER_LEVEL	8
+
 /* IOControl register bits (Only 750/760) */
 #define SC16IS7XX_IOCONTROL_LATCH_BIT	BIT(0)   /* Enable input latching */
 #define SC16IS7XX_IOCONTROL_MODEM_A_BIT	BIT(1)   /* Enable GPIO[7:4] as modem A pins */
@@ -692,6 +694,21 @@ static void sc16is7xx_handle_rx(struct uart_port *port, unsigned int rxlen,
 	tty_flip_buffer_push(&port->state->port);
 }
 
+static unsigned int sc16is7xx_txlvl(struct uart_port *port)
+{
+	unsigned int txlvl;
+
+	txlvl = sc16is7xx_port_read(port, SC16IS7XX_TXLVL_REG);
+	if (txlvl > SC16IS7XX_FIFO_SIZE) {
+		dev_err_ratelimited(port->dev,
+				    "chip reports %u free bytes in TX FIFO, but it only has %u\n",
+				    txlvl, SC16IS7XX_FIFO_SIZE);
+		return 0;
+	}
+
+	return txlvl;
+}
+
 static void sc16is7xx_handle_tx(struct uart_port *port)
 {
 	struct circ_buf *xmit = &port->state->xmit;
@@ -712,24 +729,25 @@ static void sc16is7xx_handle_tx(struct uart_port *port)
 		return;
 	}
 
-	/* Get length of data pending in circular buffer */
-	to_send = uart_circ_chars_pending(xmit);
-	if (likely(to_send)) {
-		/* Limit to size of TX FIFO */
-		txlen = sc16is7xx_port_read(port, SC16IS7XX_TXLVL_REG);
-		if (txlen > SC16IS7XX_FIFO_SIZE) {
-			dev_err_ratelimited(port->dev,
-				"chip reports %d free bytes in TX fifo, but it only has %d",
-				txlen, SC16IS7XX_FIFO_SIZE);
-			txlen = 0;
-		}
-		to_send = (to_send > txlen) ? txlen : to_send;
+	txlen = sc16is7xx_txlvl(port);
 
+	/* Handle circular buffer wrap-around by sending multiple segments */
+	while (txlen > 0 && !uart_circ_empty(xmit)) {
+		to_send = uart_circ_chars_pending(xmit);
+		to_send = min(to_send, txlen);
 		to_send = min_t(unsigned int, to_send,
 				CIRC_CNT_TO_END(xmit->head, xmit->tail, UART_XMIT_SIZE));
 
 		sc16is7xx_fifo_write(port, &xmit->buf[xmit->tail], to_send);
 		uart_xmit_advance(port, to_send);
+
+		if (uart_circ_empty(xmit))
+			break;
+
+		/* Refill below the trigger to enable the next THRI crossing. */
+		txlen = sc16is7xx_txlvl(port);
+		if (txlen < SC16IS7XX_TX_TRIGGER_LEVEL)
+			break;
 	}
 
 	uart_port_lock_irqsave(port, &flags);
@@ -1167,6 +1185,10 @@ static int sc16is7xx_startup(struct uart_port *port)
 	sc16is7xx_port_write(port, SC16IS7XX_TCR_REG,
 			     SC16IS7XX_TCR_RX_RESUME(24) |
 			     SC16IS7XX_TCR_RX_HALT(48));
+
+	/* Sync hardware and software TX trigger levels */
+	sc16is7xx_port_write(port, SC16IS7XX_TLR_REG,
+			     SC16IS7XX_TLR_TX_TRIGGER(SC16IS7XX_TX_TRIGGER_LEVEL));
 
 	/* Disable TCR/TLR access */
 	sc16is7xx_port_update(port, SC16IS7XX_MCR_REG, SC16IS7XX_MCR_TCRTLR_BIT, 0);
