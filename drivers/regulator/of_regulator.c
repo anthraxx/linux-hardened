@@ -755,16 +755,16 @@ static int is_supply_name(const char *name)
 int of_regulator_bulk_get_all(struct device *dev, struct device_node *np,
 			      struct regulator_bulk_data **consumers)
 {
-	int num_consumers = 0;
+	int num_consumers = 0, names_len = 0;
 	struct regulator *tmp;
 	struct property *prop;
+	char *names;
 	int i, n = 0, ret;
-	char name[64];
 
 	*consumers = NULL;
 
 	/*
-	 * first pass: get numbers of xxx-supply
+	 * first pass: get numbers of xxx-supply and the room their names take
 	 * second pass: fill consumers
 	 */
 restart:
@@ -774,16 +774,19 @@ restart:
 			continue;
 		if (!*consumers) {
 			num_consumers++;
+			names_len += i + 1;
 			continue;
 		} else {
-			memcpy(name, prop->name, i);
-			name[i] = '\0';
-			tmp = regulator_get(dev, name);
+			memcpy(names, prop->name, i);
+			names[i] = '\0';
+			tmp = regulator_get(dev, names);
 			if (IS_ERR(tmp)) {
 				ret = PTR_ERR(tmp);
 				goto error;
 			}
+			(*consumers)[n].supply = names;
 			(*consumers)[n].consumer = tmp;
+			names += i + 1;
 			n++;
 			continue;
 		}
@@ -792,11 +795,17 @@ restart:
 		return num_consumers;
 	if (num_consumers == 0)
 		return 0;
-	*consumers = kmalloc_array(num_consumers,
-				   sizeof(struct regulator_bulk_data),
-				   GFP_KERNEL);
+	/*
+	 * The supply names are kept in the same allocation as the array, so
+	 * that they share its lifetime and the caller has nothing extra to
+	 * free.
+	 */
+	*consumers = kzalloc(size_add(size_mul(num_consumers,
+					       sizeof(struct regulator_bulk_data)),
+				     names_len), GFP_KERNEL);
 	if (!*consumers)
 		return -ENOMEM;
+	names = (char *)(*consumers + num_consumers);
 	goto restart;
 
 error:
