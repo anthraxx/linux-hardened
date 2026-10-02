@@ -124,6 +124,7 @@ static int sl28vpd_add_cells(struct device *dev, struct nvmem_device *nvmem)
 
 		ret = nvmem_add_one_cell(nvmem, &info);
 		if (ret) {
+			of_node_put(info.np);
 			of_node_put(layout_np);
 			return ret;
 		}
