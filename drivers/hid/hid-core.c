@@ -1366,8 +1366,8 @@ static u32 s32ton(__s32 value, unsigned n)
 	if (!value || !n)
 		return 0;
 
-	if (n > 32)
-		n = 32;
+	if (n >= 32)
+		return (u32) value;
 
 	a = value >> (n - 1);
 	if (a && a != -1)
