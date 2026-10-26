@@ -584,8 +584,7 @@ static void vc4_hdmi_disable_scrambling(struct drm_encoder *encoder)
 	if (crtc && !vc4_hdmi_mode_needs_scrambling(&crtc->mode))
 		return;
 
-	if (delayed_work_pending(&vc4_hdmi->scrambling_work))
-		cancel_delayed_work_sync(&vc4_hdmi->scrambling_work);
+	cancel_delayed_work_sync(&vc4_hdmi->scrambling_work);
 
 	HDMI_WRITE(HDMI_SCRAMBLER_CTL, HDMI_READ(HDMI_SCRAMBLER_CTL) &
 		   ~VC5_HDMI_SCRAMBLER_CTL_ENABLE);
