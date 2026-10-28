@@ -154,6 +154,8 @@ static int key_or_keyring_common(struct key *dest_keyring,
 			const struct asymmetric_key_ids *signer_ids;
 
 			signer_ids = asymmetric_key_ids(trusted);
+			if (!signer_ids)
+				return -ENOKEY;
 
 			/*
 			 * The auth_ids come from the candidate key (the
