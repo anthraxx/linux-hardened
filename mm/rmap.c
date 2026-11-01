@@ -1929,8 +1929,13 @@ static bool try_to_migrate_one(struct folio *folio, struct vm_area_struct *vma,
 			VM_BUG_ON_FOLIO(folio_nr_pages(folio) > 1, folio);
 			subpage = &folio->page;
 		} else {
+			if (folio_test_hugetlb(folio))
+				pteval = huge_ptep_get(pvmw.pte);
+			else
+				pteval = ptep_get(pvmw.pte);
+
 			subpage = folio_page(folio,
-					pte_pfn(*pvmw.pte) - folio_pfn(folio));
+					pte_pfn(pteval) - folio_pfn(folio));
 		}
 		address = pvmw.address;
 		anon_exclusive = folio_test_anon(folio) &&
