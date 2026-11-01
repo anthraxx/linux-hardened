@@ -1796,10 +1796,6 @@ static int joycon_input_create(struct joycon_ctlr *ctlr)
 	ctlr->rumble_msecs = jiffies_to_msecs(jiffies);
 #endif
 
-	ret = input_register_device(ctlr->input);
-	if (ret)
-		return ret;
-
 	/* configure the imu input device */
 	ctlr->imu_input = devm_input_allocate_device(&hdev->dev);
 	if (!ctlr->imu_input)
@@ -1847,6 +1843,10 @@ static int joycon_input_create(struct joycon_ctlr *ctlr)
 	__set_bit(INPUT_PROP_ACCELEROMETER, ctlr->imu_input->propbit);
 
 	ret = input_register_device(ctlr->imu_input);
+	if (ret)
+		return ret;
+
+	ret = input_register_device(ctlr->input);
 	if (ret)
 		return ret;
 
