@@ -2372,6 +2372,7 @@ err_unregister_hook:
 err_use:
 	nf_tables_unregister_hook(net, table, chain);
 err_destroy_chain:
+	synchronize_rcu();
 	nf_tables_chain_destroy(chain);
 
 	return err;
