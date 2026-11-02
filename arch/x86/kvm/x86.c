@@ -12443,6 +12443,12 @@ int kvm_arch_hardware_setup(void *opaque)
 
 	kvm_init_pmu_capability();
 
+#ifdef CONFIG_X86_64
+	efer_reserved_bits = ~((u64)(EFER_SCE | EFER_LME | EFER_LMA));
+#else
+	efer_reserved_bits = ~((u64)EFER_SCE);
+#endif
+
 	r = ops->hardware_setup();
 	if (r != 0)
 		return r;
