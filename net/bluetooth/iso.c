@@ -1536,7 +1536,6 @@ static void iso_conn_ready(struct iso_conn *conn)
 		if (parent->sk_state != BT_LISTEN ||
 		    sock_flag(parent, SOCK_ZAPPED)) {
 			release_sock(parent);
-			sock_put(parent);
 			return;
 		}
 
