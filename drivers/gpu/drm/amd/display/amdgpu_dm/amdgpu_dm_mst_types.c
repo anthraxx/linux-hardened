@@ -1671,6 +1671,9 @@ enum dc_status dm_dp_mst_is_port_support_mode(
 	}
 #endif
 
+	if (!aconnector->dc_sink)
+		return DC_FAIL_BANDWIDTH_VALIDATE;
+
 	/* check is mst dsc output bandwidth branch_overall_throughput_0_mps */
 	switch (stream->timing.pixel_encoding) {
 	case PIXEL_ENCODING_RGB:
