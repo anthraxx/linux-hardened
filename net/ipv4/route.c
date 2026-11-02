@@ -446,10 +446,12 @@ static struct neighbour *ipv4_neigh_lookup(const struct dst_entry *dst,
 					   const void *daddr)
 {
 	const struct rtable *rt = container_of(dst, struct rtable, dst);
-	struct net_device *dev = dst->dev;
+	struct net_device *dev;
 	struct neighbour *n;
 
 	rcu_read_lock_bh();
+	rcu_read_lock();
+	dev = dst_dev_rcu(dst);
 
 	if (likely(rt->rt_gw_family == AF_INET)) {
 		n = ip_neigh_gw4(dev, rt->rt_gw4);
@@ -465,6 +467,7 @@ static struct neighbour *ipv4_neigh_lookup(const struct dst_entry *dst,
 	if (!IS_ERR(n) && !refcount_inc_not_zero(&n->refcnt))
 		n = NULL;
 
+	rcu_read_unlock();
 	rcu_read_unlock_bh();
 
 	return n;
