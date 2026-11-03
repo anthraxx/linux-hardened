@@ -6303,6 +6303,12 @@ static int smb2_create_link(struct ksmbd_work *work,
 		goto out;
 	}
 
+	/* The share root must never be removed. */
+	if (link_name[0] == '\0') {
+		rc = -EINVAL;
+		goto out;
+	}
+
 	ksmbd_debug(SMB, "link name is %s\n", link_name);
 	target_name = file_path(filp, pathname, PATH_MAX);
 	if (IS_ERR(target_name)) {
