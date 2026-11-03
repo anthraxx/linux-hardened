@@ -107,7 +107,7 @@ ssize_t ksmbd_vfs_getxattr(struct user_namespace *user_ns,
 			   char **xattr_buf);
 ssize_t ksmbd_vfs_casexattr_len(struct user_namespace *user_ns,
 				struct dentry *dentry, char *attr_name,
-				int attr_name_len);
+				int attr_name_len, char *actual_name);
 int ksmbd_vfs_setxattr(struct user_namespace *user_ns,
 		       const struct path *path, const char *attr_name,
 		       void *attr_value, size_t attr_size, int flags,
