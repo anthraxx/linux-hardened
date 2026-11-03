@@ -5712,7 +5712,8 @@ static int smb2_create_link(struct ksmbd_work *work,
 	link_name = smb2_get_name(file_info->FileName,
 				  le32_to_cpu(file_info->FileNameLength),
 				  local_nls);
-	if (IS_ERR(link_name) || S_ISDIR(file_inode(filp)->i_mode)) {
+	if (IS_ERR(link_name) || link_name[0] == '\0' ||
+	    S_ISDIR(file_inode(filp)->i_mode)) {
 		rc = -EINVAL;
 		goto out;
 	}
