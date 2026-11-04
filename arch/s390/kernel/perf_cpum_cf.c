@@ -1223,7 +1223,8 @@ int cfset_offline_cpu(unsigned int cpu)
 	struct cfset_call_on_cpu_parm p;
 
 	mutex_lock(&cfset_ctrset_mutex);
-	if (cfset_request.ctrset) {
+	if (cfset_request.ctrset &&
+	    cpumask_test_cpu(cpu, &cfset_request.mask)) {
 		p.sets = cfset_request.ctrset;
 		cfset_ioctl_off(&p);
 		cpumask_clear_cpu(cpu, &cfset_request.mask);
