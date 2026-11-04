@@ -2400,6 +2400,8 @@ cifs_writedata_release(struct kref *refcount)
 {
 	struct cifs_writedata *wdata = container_of(refcount,
 					struct cifs_writedata, refcount);
+	struct cifs_sb_info *cifs_sb = NULL;
+
 #ifdef CONFIG_CIFS_SMB_DIRECT
 	if (wdata->mr) {
 		smbd_deregister_mr(wdata->mr);
@@ -2407,11 +2409,16 @@ cifs_writedata_release(struct kref *refcount)
 	}
 #endif
 
-	if (wdata->cfile)
+	if (wdata->cfile) {
+		cifs_sb = CIFS_SB(wdata->cfile->dentry->d_sb);
 		cifsFileInfo_put(wdata->cfile);
+	}
 
 	kvfree(wdata->pages);
 	kfree(wdata);
+
+	if (cifs_sb && atomic_dec_and_test(&cifs_sb->outstanding_aio))
+		wake_up_var(&cifs_sb->outstanding_aio);
 }
 
 /*
@@ -2475,6 +2482,7 @@ cifs_writev_requeue(struct cifs_writedata *wdata)
 			if (!is_retryable_error(rc))
 				rc = -EBADF;
 		} else {
+			atomic_inc(&CIFS_SB(inode->i_sb)->outstanding_aio);
 			wdata2->pid = wdata2->cfile->pid;
 			rc = server->ops->async_writev(wdata2,
 						       cifs_writedata_release);
@@ -2858,8 +2866,10 @@ retry:
 				rc = get_file_rc;
 			else
 				rc = -EBADF;
-		} else
+		} else {
+			atomic_inc(&cifs_sb->outstanding_aio);
 			rc = wdata_send_pages(wdata, nr_pages, mapping, wbc);
+		}
 
 		for (i = 0; i < nr_pages; ++i)
 			unlock_page(wdata->pages[i]);
@@ -3206,11 +3216,12 @@ cifs_uncached_writedata_release(struct kref *refcount)
 	int i;
 	struct cifs_writedata *wdata = container_of(refcount,
 					struct cifs_writedata, refcount);
+	struct cifs_aio_ctx *ctx = wdata->ctx;
 
-	kref_put(&wdata->ctx->refcount, cifs_aio_ctx_release);
 	for (i = 0; i < wdata->nr_pages; i++)
 		put_page(wdata->pages[i]);
 	cifs_writedata_release(refcount);
+	kref_put(&ctx->refcount, cifs_aio_ctx_release);
 }
 
 static void collect_uncached_write_data(struct cifs_aio_ctx *ctx);
@@ -3476,6 +3487,7 @@ cifs_write_from_iter(loff_t offset, size_t len, struct iov_iter *from,
 		wdata->nr_pages = nr_pages;
 		wdata->offset = (__u64)offset;
 		wdata->cfile = cifsFileInfo_get(open_file);
+		atomic_inc(&cifs_sb->outstanding_aio);
 		wdata->server = server;
 		wdata->pid = pid;
 		wdata->bytes = cur_len;
@@ -3636,6 +3648,7 @@ static ssize_t __cifs_writev(
 		return -ENOMEM;
 
 	ctx->cfile = cifsFileInfo_get(cfile);
+	atomic_inc(&cifs_sb->outstanding_aio);
 
 	if (!is_sync_kiocb(iocb))
 		ctx->iocb = iocb;
@@ -3838,17 +3851,24 @@ cifs_readdata_release(struct kref *refcount)
 {
 	struct cifs_readdata *rdata = container_of(refcount,
 					struct cifs_readdata, refcount);
+	struct cifs_sb_info *cifs_sb = NULL;
+
 #ifdef CONFIG_CIFS_SMB_DIRECT
 	if (rdata->mr) {
 		smbd_deregister_mr(rdata->mr);
 		rdata->mr = NULL;
 	}
 #endif
-	if (rdata->cfile)
+	if (rdata->cfile) {
+		cifs_sb = CIFS_SB(rdata->cfile->dentry->d_sb);
 		cifsFileInfo_put(rdata->cfile);
+	}
 
 	kvfree(rdata->pages);
 	kfree(rdata);
+
+	if (cifs_sb && atomic_dec_and_test(&cifs_sb->outstanding_aio))
+		wake_up_var(&cifs_sb->outstanding_aio);
 }
 
 static int
@@ -3883,13 +3903,14 @@ cifs_uncached_readdata_release(struct kref *refcount)
 {
 	struct cifs_readdata *rdata = container_of(refcount,
 					struct cifs_readdata, refcount);
+	struct cifs_aio_ctx *ctx = rdata->ctx;
 	unsigned int i;
 
-	kref_put(&rdata->ctx->refcount, cifs_aio_ctx_release);
 	for (i = 0; i < rdata->nr_pages; i++) {
 		put_page(rdata->pages[i]);
 	}
 	cifs_readdata_release(refcount);
+	kref_put(&ctx->refcount, cifs_aio_ctx_release);
 }
 
 /**
@@ -4193,6 +4214,7 @@ cifs_send_async_read(loff_t offset, size_t len, struct cifsFileInfo *open_file,
 
 		rdata->server = server;
 		rdata->cfile = cifsFileInfo_get(open_file);
+		atomic_inc(&cifs_sb->outstanding_aio);
 		rdata->nr_pages = npages;
 		rdata->offset = offset;
 		rdata->bytes = cur_len;
@@ -4378,6 +4400,7 @@ static ssize_t __cifs_readv(
 		return -ENOMEM;
 
 	ctx->cfile = cifsFileInfo_get(cfile);
+	atomic_inc(&cifs_sb->outstanding_aio);
 
 	if (!is_sync_kiocb(iocb))
 		ctx->iocb = iocb;
@@ -4916,6 +4939,7 @@ static void cifs_readahead(struct readahead_control *ractl)
 		rdata->nr_pages = nr_pages;
 		rdata->bytes	= readahead_batch_length(ractl);
 		rdata->cfile	= cifsFileInfo_get(open_file);
+		atomic_inc(&cifs_sb->outstanding_aio);
 		rdata->server	= server;
 		rdata->mapping	= ractl->mapping;
 		rdata->offset	= readahead_pos(ractl);
