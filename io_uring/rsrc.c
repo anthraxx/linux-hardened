@@ -203,7 +203,7 @@ struct io_rsrc_node *io_rsrc_node_alloc(struct io_ring_ctx *ctx)
 	if (entry) {
 		ref_node = container_of(entry, struct io_rsrc_node, cache);
 	} else {
-		ref_node = kzalloc(sizeof(*ref_node), GFP_KERNEL);
+		ref_node = kzalloc(sizeof(*ref_node), GFP_KERNEL_ACCOUNT);
 		if (!ref_node)
 			return NULL;
 	}
@@ -923,7 +923,7 @@ static int io_sqe_buffer_register(struct io_ring_ctx *ctx, struct iovec *iov,
 		}
 	}
 
-	imu = kvmalloc(struct_size(imu, bvec, nr_pages), GFP_KERNEL);
+	imu = kvmalloc(struct_size(imu, bvec, nr_pages), GFP_KERNEL_ACCOUNT);
 	if (!imu)
 		goto done;
 
