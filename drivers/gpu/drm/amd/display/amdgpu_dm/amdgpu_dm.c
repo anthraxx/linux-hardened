@@ -376,7 +376,8 @@ static inline bool update_planes_and_stream_adapter(struct dc *dc,
 	/*
 	 * Previous frame finished and HW is ready for optimization.
 	 */
-	if (update_type == UPDATE_TYPE_FAST)
+	if (update_type == UPDATE_TYPE_FAST &&
+	    dc->ctx->dce_version >= DCE_VERSION_MAX)
 		dc_post_update_surfaces_to_stream(dc);
 
 	return dc_update_planes_and_stream(dc,
