@@ -487,6 +487,10 @@ xchk_bmap_check_rmap(
 	struct xfs_ifork		*ifp;
 	struct xfs_scrub		*sc = sbcri->sc;
 	bool				have_map;
+	int				error = 0;
+
+	if (xchk_should_terminate(sc, &error))
+		return error;
 
 	/* Is this even the right fork? */
 	if (rec->rm_owner != sc->ip->i_ino)
@@ -517,6 +521,9 @@ xchk_bmap_check_rmap(
 	 * entire rmap is covered by bmbt records.
 	 */
 	while (have_map) {
+		if (xchk_should_terminate(sc, &error))
+			return error;
+
 		if (irec.br_startoff != rec->rm_offset)
 			xchk_fblock_set_corrupt(sc, sbcri->whichfork,
 					rec->rm_offset);
