@@ -626,7 +626,10 @@ static int ovl_copy_up_workdir(struct ovl_copy_up_ctx *c)
 	if (IS_ERR(upper))
 		goto cleanup;
 
-	err = ovl_do_rename(wdir, temp, udir, upper, 0);
+	/* The name may have been taken since lookup, never replace it */
+	err = -EEXIST;
+	if (d_is_negative(upper))
+		err = ovl_do_rename(wdir, temp, udir, upper, 0);
 	dput(upper);
 	if (err)
 		goto cleanup;
