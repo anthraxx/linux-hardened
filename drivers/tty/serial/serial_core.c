@@ -3071,6 +3071,13 @@ int uart_remove_one_port(struct uart_driver *drv, struct uart_port *uport)
 	if (uart_console(uport))
 		unregister_console(uport->cons);
 
+	mutex_lock(&port->mutex);
+	port->console = false;
+
+	if (tty_port_initialized(port))
+		uart_shutdown(NULL, state);
+	mutex_unlock(&port->mutex);
+
 	/*
 	 * Free the port IO and memory resources, if any.
 	 */
