@@ -1750,6 +1750,8 @@ id_mode_to_cifs_acl(struct inode *inode, const char *path, __u64 *pnmode,
 	/* Potentially, five new ACEs can be added to the ACL for U,G,O mapping */
 	nsecdesclen = secdesclen;
 	if (pnmode && *pnmode != NO_CHANGE_64) { /* chmod */
+		nsecdesclen += sizeof(struct cifs_acl) +
+			2 * sizeof(struct cifs_sid);
 		if (mode_from_sid)
 			nsecdesclen += 2 * sizeof(struct cifs_ace);
 		else /* cifsacl */
