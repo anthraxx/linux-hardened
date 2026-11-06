@@ -1232,7 +1232,8 @@ static int svm_set_nested_state(struct kvm_vcpu *vcpu,
 	 * nested_svm_check_permissions).
 	 * TODO: validate reserved bits for all saved state.
 	 */
-	if (!(save->cr0 & X86_CR0_PG))
+	if (!(save->cr0 & X86_CR0_PG) ||
+	    ((save->efer & EFER_LMA) && !(save->efer & EFER_LME)))
 		goto out_free;
 	if (!(save->efer & EFER_SVME))
 		goto out_free;
