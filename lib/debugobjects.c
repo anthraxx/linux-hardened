@@ -616,10 +616,10 @@ __debug_object_init(void *addr, const struct debug_obj_descr *descr, int onstack
 	if (!IS_ENABLED(CONFIG_PREEMPT_RT) || preemptible()) {
 		/*
 		 * Annotate away the spinlock_t inside raw_spinlock_t warning
-		 * by temporarily raising the wait-type to LD_WAIT_SLEEP,
+		 * by temporarily raising the wait-type to LD_WAIT_CONFIG,
 		 * allowing the allocator's spinlock_t and local_lock_t locks.
 		 */
-		static DEFINE_WAIT_OVERRIDE_MAP(fill_pool_map, LD_WAIT_SLEEP);
+		static DEFINE_WAIT_OVERRIDE_MAP(fill_pool_map, LD_WAIT_CONFIG);
 		lock_map_acquire_try(&fill_pool_map);
 		fill_pool();
 		lock_map_release(&fill_pool_map);
