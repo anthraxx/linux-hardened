@@ -2353,7 +2353,7 @@ static void wacom_set_shared_values(struct wacom_wac *wacom_wac)
 
 	if (wacom_wac->has_mute_touch_switch) {
 		WRITE_ONCE(wacom_wac->shared->has_mute_touch_switch, true);
-		wacom_wac->shared->is_touch_on = true;
+		WRITE_ONCE(wacom_wac->shared->is_touch_on, true);
 	}
 
 	if (wacom_wac->features.device_type & WACOM_DEVICETYPE_TOUCH) {
