@@ -226,7 +226,6 @@ static int skl_int3472_handle_gpio_resources(struct acpi_resource *ares,
 	struct int3472_discrete_device *int3472 = data;
 	struct acpi_resource_gpio *agpio;
 	union acpi_object *obj;
-	const char *err_msg;
 	int ret;
 	u8 type;
 
@@ -255,27 +254,31 @@ static int skl_int3472_handle_gpio_resources(struct acpi_resource *ares,
 		ret = skl_int3472_map_gpio_to_sensor(int3472, agpio, "reset",
 						     GPIO_ACTIVE_LOW);
 		if (ret)
-			err_msg = "Failed to map reset pin to sensor\n";
+			dev_err_probe(int3472->dev, ret,
+				      "Failed to map reset pin to sensor\n");
 
 		break;
 	case INT3472_GPIO_TYPE_POWERDOWN:
 		ret = skl_int3472_map_gpio_to_sensor(int3472, agpio, "powerdown",
 						     GPIO_ACTIVE_LOW);
 		if (ret)
-			err_msg = "Failed to map powerdown pin to sensor\n";
+			dev_err_probe(int3472->dev, ret,
+				      "Failed to map powerdown pin to sensor\n");
 
 		break;
 	case INT3472_GPIO_TYPE_CLK_ENABLE:
 	case INT3472_GPIO_TYPE_PRIVACY_LED:
 		ret = skl_int3472_map_gpio_to_clk(int3472, agpio, type);
 		if (ret)
-			err_msg = "Failed to map GPIO to clock\n";
+			dev_err_probe(int3472->dev, ret,
+				      "Failed to map GPIO to clock\n");
 
 		break;
 	case INT3472_GPIO_TYPE_POWER_ENABLE:
 		ret = skl_int3472_register_regulator(int3472, agpio);
 		if (ret)
-			err_msg = "Failed to map regulator to sensor\n";
+			dev_err_probe(int3472->dev, ret,
+				      "Failed to map regulator to sensor\n");
 
 		break;
 	default:
@@ -288,9 +291,6 @@ static int skl_int3472_handle_gpio_resources(struct acpi_resource *ares,
 
 	int3472->ngpios++;
 	ACPI_FREE(obj);
-
-	if (ret < 0)
-		return dev_err_probe(int3472->dev, ret, err_msg);
 
 	return ret;
 }
