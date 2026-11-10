@@ -1011,7 +1011,7 @@ out:
  *
  * %-ENOSPC - No space left on device (only in a panic state).
  *
- * %-ERESTARTSYS - Interrupted.
+ * %-EINTR - Interrupted.
  *
  * %-ENOMEM - Insufficient memory available.
  *

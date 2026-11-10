@@ -750,7 +750,7 @@ static void nilfs_abort_roll_forward(struct the_nilfs *nilfs)
  *
  * %-ENOSPC - No space left on device (only in a panic state).
  *
- * %-ERESTARTSYS - Interrupted.
+ * %-EINTR - Interrupted.
  *
  * %-ENOMEM - Insufficient memory available.
  */
