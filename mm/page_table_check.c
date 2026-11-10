@@ -64,7 +64,8 @@ static void page_table_check_clear(struct mm_struct *mm, unsigned long addr,
 	unsigned long i;
 	bool anon;
 
-	if (!pfn_valid(pfn))
+	if (!pfn_valid(pfn) || is_zero_pfn(pfn) ||
+	    is_huge_zero_page(compound_head(pfn_to_page(pfn))))
 		return;
 
 	page = pfn_to_page(pfn);
@@ -105,7 +106,8 @@ static void page_table_check_set(struct mm_struct *mm, unsigned long addr,
 	unsigned long i;
 	bool anon;
 
-	if (!pfn_valid(pfn))
+	if (!pfn_valid(pfn) || is_zero_pfn(pfn) ||
+	    is_huge_zero_page(compound_head(pfn_to_page(pfn))))
 		return;
 
 	page = pfn_to_page(pfn);
