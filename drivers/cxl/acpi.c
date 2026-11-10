@@ -377,11 +377,15 @@ static int add_root_nvdimm_bridge(struct device *match, void *data)
 
 static int cxl_acpi_probe(struct platform_device *pdev)
 {
-	int rc;
 	acpi_status status;
+	struct acpi_device *adev;
 	struct cxl_port *root_port;
 	struct device *host = &pdev->dev;
-	struct acpi_device *adev = ACPI_COMPANION(host);
+	int rc;
+
+	adev = ACPI_COMPANION(host);
+	if (!adev)
+		return -ENODEV;
 
 	root_port = devm_cxl_add_port(host, host, CXL_RESOURCE_NONE, NULL);
 	if (IS_ERR(root_port))
