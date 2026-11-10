@@ -3937,6 +3937,14 @@ static int mptcp_connect(struct sock *sk, struct sockaddr *uaddr, int addr_len)
 	 */
 	if (unlikely(err && err != -EINPROGRESS)) {
 		inet_sk_state_store(sk, inet_sk_state_load(ssock->sk));
+
+		spin_lock_bh(&msk->fallback_lock);
+		msk->allow_subflows = true;
+		msk->allow_infinite_fallback = true;
+		clear_bit(MPTCP_FALLBACK_DONE, &msk->flags);
+		spin_unlock_bh(&msk->fallback_lock);
+
+		mptcp_subflow_ctx_reset(subflow);
 		return err;
 	}
 
