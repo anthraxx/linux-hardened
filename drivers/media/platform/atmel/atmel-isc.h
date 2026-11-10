@@ -194,6 +194,7 @@ struct isc_device {
 	struct isc_clk		isc_clks[2];
 
 	struct device		*dev;
+	int			irq;
 	struct v4l2_device	v4l2_dev;
 	struct video_device	video_dev;
 
