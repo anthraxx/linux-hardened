@@ -81,6 +81,8 @@ void mptcp_subflow_reqsk_clone(struct request_sock *req,
 	}
 
 	new_subflow_req->msk = msk;
+
+	mptcp_token_move_request(req, new_req);
 }
 
 static void subflow_generate_hmac(u64 key1, u64 key2, u32 nonce1, u32 nonce2,
@@ -779,6 +781,7 @@ create_child:
 				goto dispose_child;
 			}
 
+fallback:
 			if (fallback)
 				SUBFLOW_REQ_INC_STATS(req, MPTCP_MIB_MPCAPABLEPASSIVEFALLBACK);
 
@@ -803,13 +806,18 @@ create_child:
 			if (mp_opt.deny_join_id0)
 				WRITE_ONCE(mptcp_sk(new_msk)->pm.remote_deny_join_id0, true);
 
+			if (!mptcp_token_accept(subflow_req, mptcp_sk(new_msk))) {
+				WRITE_ONCE(mptcp_sk(new_msk)->first, NULL);
+				fallback = true;
+				goto fallback;
+			}
+
 			/* new mpc subflow takes ownership of the newly
 			 * created mptcp socket
 			 */
 			new_msk->sk_destruct = mptcp_sock_destruct;
 			mptcp_sk(new_msk)->setsockopt_seq = ctx->setsockopt_seq;
 			mptcp_pm_new_connection(mptcp_sk(new_msk), child, 1);
-			mptcp_token_accept(subflow_req, mptcp_sk(new_msk));
 			ctx->conn = new_msk;
 			new_msk = NULL;
 
