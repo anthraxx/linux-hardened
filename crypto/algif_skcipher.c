@@ -82,8 +82,17 @@ static int _skcipher_recvmsg(struct socket *sock, struct msghdr *msg,
 	 * If more buffers are to be expected to be processed, process only
 	 * full block size buffers.
 	 */
-	if (ctx->more || len < ctx->used)
-		len -= len % bs;
+	if (ctx->more || len < ctx->used) {
+		size_t excess = len % bs;
+
+		len -= excess;
+		iov_iter_revert(&msg->msg_iter, excess);
+
+		if (!len) {
+			err = -EINVAL;
+			goto free;
+		}
+	}
 
 	/*
 	 * Create a per request TX SGL for this request which tracks the
