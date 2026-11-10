@@ -277,20 +277,24 @@ uint64_t kfd_get_number_elems(struct kfd_dev *kfd)
 
 phys_addr_t kfd_get_process_doorbells(struct kfd_process_device *pdd)
 {
-	if (!pdd->doorbell_index) {
-		int r = kfd_alloc_process_doorbells(pdd->dev,
-						    &pdd->doorbell_index);
-		if (r < 0)
-			return 0;
-	}
+	if (kfd_alloc_process_doorbells(pdd->dev, pdd) < 0)
+		return 0;
 
 	return pdd->dev->doorbell_base +
 		pdd->doorbell_index * kfd_doorbell_process_slice(pdd->dev);
 }
 
-int kfd_alloc_process_doorbells(struct kfd_dev *kfd, unsigned int *doorbell_index)
+int kfd_alloc_process_doorbells(struct kfd_dev *kfd, struct kfd_process_device *pdd)
 {
 	int r = 0;
+
+	mutex_lock(&pdd->doorbell_mutex);
+
+	/* Another thread may have won the check-and-allocate race */
+	if (pdd->doorbell_index) {
+		mutex_unlock(&pdd->doorbell_mutex);
+		return 0;
+	}
 
 	if (!kfd->shared_resources.enable_mes)
 		r = ida_simple_get(&kfd->doorbell_ida, 1,
@@ -298,14 +302,15 @@ int kfd_alloc_process_doorbells(struct kfd_dev *kfd, unsigned int *doorbell_inde
 	else
 		r = amdgpu_mes_alloc_process_doorbells(
 				(struct amdgpu_device *)kfd->adev,
-				doorbell_index);
+				&pdd->doorbell_index);
 
 	if (r > 0)
-		*doorbell_index = r;
+		pdd->doorbell_index = r;
 
 	if (r < 0)
 		pr_err("Failed to allocate process doorbells\n");
 
+	mutex_unlock(&pdd->doorbell_mutex);
 	return r;
 }
 

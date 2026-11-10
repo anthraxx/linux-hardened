@@ -1065,6 +1065,8 @@ static void kfd_process_destroy_pdds(struct kfd_process *p)
 			pdd->runtime_inuse = false;
 		}
 
+		mutex_destroy(&pdd->doorbell_mutex);
+
 		kfree(pdd);
 		p->pdds[i] = NULL;
 	}
@@ -1613,6 +1615,7 @@ struct kfd_process_device *kfd_create_process_device_data(struct kfd_dev *dev,
 		memset(pdd->proc_ctx_cpu_ptr, 0, AMDGPU_MES_PROC_CTX_SIZE);
 	}
 
+	mutex_init(&pdd->doorbell_mutex);
 	p->pdds[p->n_pdds++] = pdd;
 
 	/* Init idr used for memory handle translation */

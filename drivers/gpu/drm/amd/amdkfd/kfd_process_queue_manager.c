@@ -868,8 +868,7 @@ int kfd_criu_restore_queue(struct kfd_process *p,
 
 	*priv_data_offset += q_extra_data_size;
 
-	if (!pdd->doorbell_index &&
-	    kfd_alloc_process_doorbells(pdd->dev, &pdd->doorbell_index) < 0) {
+	if (kfd_alloc_process_doorbells(pdd->dev, pdd) < 0) {
 		ret = -ENOMEM;
 		goto exit;
 	}

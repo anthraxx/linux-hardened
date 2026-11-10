@@ -333,8 +333,7 @@ static int kfd_ioctl_create_queue(struct file *filep, struct kfd_process *p,
 		goto err_bind_process;
 	}
 
-	if (!pdd->doorbell_index &&
-	    kfd_alloc_process_doorbells(dev, &pdd->doorbell_index) < 0) {
+	if (kfd_alloc_process_doorbells(dev, pdd) < 0) {
 		err = -ENOMEM;
 		goto err_alloc_doorbells;
 	}
@@ -2203,8 +2202,7 @@ static int criu_restore_devices(struct kfd_process *p,
 			goto exit;
 		}
 
-		if (!pdd->doorbell_index &&
-		    kfd_alloc_process_doorbells(pdd->dev, &pdd->doorbell_index) < 0) {
+		if (kfd_alloc_process_doorbells(pdd->dev, pdd) < 0) {
 			ret = -ENOMEM;
 			goto exit;
 		}
