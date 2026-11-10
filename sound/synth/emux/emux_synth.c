@@ -49,7 +49,7 @@ snd_emux_note_on(void *p, int note, int vel, struct snd_midi_channel *chan)
 	int i, key, nvoices;
 	struct snd_emux_voice *vp;
 	struct snd_sf_zone *table[SNDRV_EMUX_MAX_MULTI_VOICES];
-	unsigned long flags;
+	unsigned long flags, sf_flags;
 	struct snd_emux_port *port;
 
 	port = p;
@@ -61,9 +61,12 @@ snd_emux_note_on(void *p, int note, int vel, struct snd_midi_channel *chan)
 		return;
 
 	key = note; /* remember the original note */
+
+	/* hold sflist->lock for protecting against concurrent free */
+	spin_lock_irqsave(&emu->sflist->lock, sf_flags);
 	nvoices = get_zone(emu, port, &note, vel, chan, table);
 	if (! nvoices)
-		return;
+		goto unlock;
 
 	/* exclusive note off */
 	for (i = 0; i < nvoices; i++) {
@@ -136,6 +139,8 @@ snd_emux_note_on(void *p, int note, int vel, struct snd_midi_channel *chan)
 		}
 	}
 #endif
+unlock:
+	spin_unlock_irqrestore(&emu->sflist->lock, sf_flags);
 }
 
 /*
