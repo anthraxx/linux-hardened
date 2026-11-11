@@ -26,7 +26,7 @@
 #include <linux/acpi.h>
 #include <linux/i8042.h>
 #include <linux/serio.h>
-#include "../../misc/lis3lv02d/lis3lv02d.h"
+#include "../../../misc/lis3lv02d/lis3lv02d.h"
 
 #define DRIVER_NAME     "hp_accel"
 #define ACPI_MDPS_CLASS "accelerometer"
