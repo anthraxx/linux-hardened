@@ -12,6 +12,7 @@
 #include <linux/io.h>
 #include <linux/iopoll.h>
 #include <linux/module.h>
+#include <linux/mutex.h>
 #include <linux/nvmem-provider.h>
 #include <linux/reset.h>
 #include <linux/slab.h>
@@ -60,6 +61,8 @@ struct rockchip_otp {
 	struct clk_bulk_data	*clks;
 	int num_clks;
 	struct reset_control *rst;
+	/* Serializes access to the OTP controller state machine */
+	struct mutex mutex;
 };
 
 /* list of required clocks */
@@ -139,10 +142,12 @@ static int rockchip_otp_read(void *context, unsigned int offset,
 	u8 *buf = val;
 	int ret = 0;
 
+	mutex_lock(&otp->mutex);
+
 	ret = clk_bulk_prepare_enable(otp->num_clks, otp->clks);
 	if (ret < 0) {
 		dev_err(otp->dev, "failed to prepare/enable clks\n");
-		return ret;
+		goto unlock;
 	}
 
 	ret = rockchip_otp_reset(otp);
@@ -176,6 +181,9 @@ read_end:
 	writel(0x0 | OTPC_USE_USER_MASK, otp->base + OTPC_USER_CTRL);
 disable_clks:
 	clk_bulk_disable_unprepare(otp->num_clks, otp->clks);
+
+unlock:
+	mutex_unlock(&otp->mutex);
 
 	return ret;
 }
@@ -226,6 +234,9 @@ static int rockchip_otp_probe(struct platform_device *pdev)
 		return -ENOMEM;
 
 	otp->dev = dev;
+
+	mutex_init(&otp->mutex);
+
 	otp->base = devm_platform_ioremap_resource(pdev, 0);
 	if (IS_ERR(otp->base))
 		return PTR_ERR(otp->base);
