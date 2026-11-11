@@ -708,6 +708,15 @@ static int madvise_free_pte_range(pmd_t *pmd, unsigned long addr,
 			if (!folio_trylock(folio))
 				continue;
 			/*
+			 * KSM folios can gain new mappings at any time, so we must
+			 * not clear their dirty flag.
+			 */
+			if (folio_test_ksm(folio)) {
+				folio_unlock(folio);
+				continue;
+			}
+
+			/*
 			 * If folio is shared with others, we mustn't clear
 			 * the folio's dirty flag.
 			 */
