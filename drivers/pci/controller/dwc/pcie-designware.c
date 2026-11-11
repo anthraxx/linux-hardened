@@ -248,7 +248,7 @@ static void dw_pcie_prog_outbound_atu_unroll(struct dw_pcie *pci, u8 func_no,
 	dw_pcie_writel_ob_unroll(pci, index, PCIE_ATU_UNR_REGION_CTRL1,
 				 type | PCIE_ATU_FUNC_NUM(func_no));
 	dw_pcie_writel_ob_unroll(pci, index, PCIE_ATU_UNR_REGION_CTRL2,
-				 PCIE_ATU_ENABLE);
+				 PCIE_ATU_ENABLE | PCIE_ATU_DMA_BYPASS);
 
 	/*
 	 * Make sure ATU enable takes effect before any subsequent config
@@ -294,7 +294,10 @@ static void __dw_pcie_prog_outbound_atu(struct dw_pcie *pci, u8 func_no,
 			   upper_32_bits(pci_addr));
 	dw_pcie_writel_dbi(pci, PCIE_ATU_CR1, type |
 			   PCIE_ATU_FUNC_NUM(func_no));
-	dw_pcie_writel_dbi(pci, PCIE_ATU_CR2, PCIE_ATU_ENABLE);
+	val = PCIE_ATU_ENABLE;
+	if (pci->version >= 0x460A)
+		val |= PCIE_ATU_DMA_BYPASS;
+	dw_pcie_writel_dbi(pci, PCIE_ATU_CR2, val);
 
 	/*
 	 * Make sure ATU enable takes effect before any subsequent config
