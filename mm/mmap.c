@@ -3426,6 +3426,9 @@ struct vm_area_struct *copy_vma(struct vm_area_struct **vmap,
 	if (can_self_merge && keep_source &&
 	    (addr == vma->vm_end || vma->vm_start == addr + len))
 		new_vma = NULL;
+	else if (vma_has_uffd_without_event_remap(vma))
+		/* If not registered for remap, uffd context will be cleared. */
+		new_vma = NULL;
 	else
 		new_vma = vma_merge(&vmi, mm, prev, addr, addr + len,
 				    vma->vm_flags, vma->anon_vma, vma->vm_file,
