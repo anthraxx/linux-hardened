@@ -650,6 +650,15 @@ static int madvise_free_pte_range(pmd_t *pmd, unsigned long addr,
 			if (!trylock_page(page))
 				continue;
 			/*
+			 * KSM pages can gain new mappings at any time, so we must
+			 * not clear their dirty flag.
+			 */
+			if (PageKsm(page)) {
+				unlock_page(page);
+				continue;
+			}
+
+			/*
 			 * If page is shared with others, we couldn't clear
 			 * PG_dirty of the page.
 			 */
