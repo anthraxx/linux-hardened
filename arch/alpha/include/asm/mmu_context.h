@@ -132,6 +132,8 @@ __get_new_mm_context(struct mm_struct *mm, long cpu)
 	return next;
 }
 
+extern void __load_new_mm_context(struct mm_struct *);
+
 __EXTERN_INLINE void
 ev5_switch_mm(struct mm_struct *prev_mm, struct mm_struct *next_mm,
 	      struct task_struct *next)
@@ -140,6 +142,15 @@ ev5_switch_mm(struct mm_struct *prev_mm, struct mm_struct *next_mm,
 	unsigned long asn;
 	unsigned long mmc;
 	long cpu = smp_processor_id();
+
+	/*
+	 * kthread_use_mm() switches current's mm without alpha_switch_to(),
+	 * which loads the context.
+	 */
+	if (next == current) {
+		__load_new_mm_context(next_mm);
+		return;
+	}
 
 #ifdef CONFIG_SMP
 	cpu_data[cpu].asn_lock = 1;
@@ -181,8 +192,6 @@ ev4_switch_mm(struct mm_struct *prev_mm, struct mm_struct *next_mm,
 	   to avoid flushing the icache.  */
 	ev5_switch_mm(prev_mm, next_mm, next);
 }
-
-extern void __load_new_mm_context(struct mm_struct *);
 
 #ifdef CONFIG_SMP
 #define check_mmu_context()					\
