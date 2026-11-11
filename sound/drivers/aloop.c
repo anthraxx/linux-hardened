@@ -351,12 +351,15 @@ static int loopback_check_format(struct loopback_cable *cable, int stream)
 		check = runtime->format != cruntime->format ||
 			runtime->rate != cruntime->rate ||
 			runtime->channels != cruntime->channels;
-		if (!check)
-			goto unlock;
-		if (stream == SNDRV_PCM_STREAM_CAPTURE) {
+		/*
+		 * Matching params also go on to the update below, so that
+		 * the setup controls follow a playback that joins an open
+		 * capture.
+		 */
+		if (check && stream == SNDRV_PCM_STREAM_CAPTURE) {
 			err = -EIO;
 			goto unlock;
-		} else if (snd_pcm_running(dpcm_capt->substream)) {
+		} else if (check && snd_pcm_running(dpcm_capt->substream)) {
 			/* close must not free the peer runtime below */
 			atomic_inc(&cable->stop_count);
 			stop_capture = true;
