@@ -27,7 +27,8 @@ static int fbcon_rotate_font(struct fb_info *info, struct vc_data *vc)
 	u8 *dst;
 
 	if (vc->vc_font.data == ops->fontdata &&
-	    ops->p->con_rotate == ops->cur_rotate)
+	    ops->p->con_rotate == ops->cur_rotate &&
+	    ops->fontbuffer)
 		goto finished;
 
 	src = ops->fontdata = vc->vc_font.data;
