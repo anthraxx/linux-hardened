@@ -1102,6 +1102,9 @@ int __init early_init_dt_scan_memory(unsigned long node, const char *uname,
 	if (type == NULL || strcmp(type, "memory") != 0)
 		return 0;
 
+	if (!of_fdt_device_is_available(initial_boot_params, node))
+		return 0;
+
 	reg = of_get_flat_dt_prop(node, "linux,usable-memory", &l);
 	if (reg == NULL)
 		reg = of_get_flat_dt_prop(node, "reg", &l);
