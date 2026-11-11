@@ -1006,10 +1006,10 @@ static int dlfb_ops_open(struct fb_info *info, int user)
 		if (fbdefio) {
 			fbdefio->delay = DL_DEFIO_WRITE_DELAY;
 			fbdefio->deferred_io = dlfb_dpy_deferred_io;
-		}
 
-		info->fbdefio = fbdefio;
-		fb_deferred_io_init(info);
+			info->fbdefio = fbdefio;
+			fb_deferred_io_init(info);
+		}
 	}
 
 	dev_dbg(info->dev, "open, user=%d fb_info=%p count=%d\n",
