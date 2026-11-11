@@ -4578,6 +4578,8 @@ static void unmap_ref_private(struct mm_struct *mm, struct vm_area_struct *vma,
 	struct address_space *mapping;
 	pgoff_t pgoff;
 
+	VM_WARN_ON_ONCE(!PageAnon(page));
+
 	/*
 	 * vm_pgoff is in PAGE_SIZE units, hence the different calculation
 	 * from page cache lookup which is in HPAGE_SIZE units.
@@ -4613,9 +4615,18 @@ static void unmap_ref_private(struct mm_struct *mm, struct vm_area_struct *vma,
 		 * could insert a zeroed page instead of the data existing
 		 * from the time of fork. This would look like data corruption
 		 */
-		if (!is_vma_resv_set(iter_vma, HPAGE_RESV_OWNER))
-			unmap_hugepage_range(iter_vma, address,
-					     address + huge_page_size(h), page);
+		if (is_vma_resv_set(iter_vma, HPAGE_RESV_OWNER))
+			continue;
+
+		/*
+		 * The address in other VMAs can differ. Even though our old
+		 * page is anon, we always operate on the underlying hugetlb
+		 * file.
+		 */
+		address = iter_vma->vm_start +
+			((pgoff - iter_vma->vm_pgoff) << PAGE_SHIFT);
+		unmap_hugepage_range(iter_vma, address,
+				     address + huge_page_size(h), page);
 	}
 	i_mmap_unlock_write(mapping);
 }
