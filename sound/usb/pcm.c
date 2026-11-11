@@ -1438,6 +1438,18 @@ static void retire_capture_urb(struct snd_usb_substream *subs,
 			bytes -= adj;
 			subs->stream_offset_adj -= adj;
 		}
+		/*
+		 * A packet can be as large as the endpoint's maxpacksize, which
+		 * the device chooses, while the ring buffer can be as small as
+		 * two 64-byte periods. The hwptr_done wrap below handles one
+		 * wrap only, so never take more than one buffer from a packet.
+		 */
+		if (unlikely(bytes > runtime->buffer_size * stride)) {
+			dev_warn_ratelimited(&subs->dev->dev,
+					     "%u-byte packet exceeds %lu-byte buffer, truncating\n",
+					     bytes, runtime->buffer_size * stride);
+			bytes = runtime->buffer_size * stride;
+		}
 		frames = bytes / stride;
 		if (!subs->txfr_quirk)
 			bytes = frames * stride;
@@ -1614,6 +1626,14 @@ static void prepare_playback_urb(struct snd_usb_substream *subs,
 		else
 			counts = snd_usb_endpoint_next_packet_size(ep);
 
+		/*
+		 * Bound by the ring buffer as well as by the URB:
+		 * copy_to_urb() wraps hwptr_done once, so one URB must
+		 * never carry more than the whole buffer.
+		 */
+		if ((frames + counts) * ep->stride > ctx->buffer_size ||
+		    (frames + counts) * ep->stride > runtime->buffer_size * stride)
+			break;
 		/* set up descriptor */
 		urb->iso_frame_desc[i].offset = frames * ep->stride;
 		urb->iso_frame_desc[i].length = counts * ep->stride;
