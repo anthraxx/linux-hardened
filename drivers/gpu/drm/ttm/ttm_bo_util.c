@@ -452,6 +452,10 @@ static int ttm_bo_kmap_ttm(struct ttm_buffer_object *bo,
 	if (ret)
 		return ret;
 
+	/* Imported sg tables only come with DMA addresses, no pages to map. */
+	if (!ttm->pages)
+		return -EINVAL;
+
 	if (num_pages == 1 && (mem->placement & TTM_PL_FLAG_CACHED)) {
 		/*
 		 * We're mapping a single page, and the desired
