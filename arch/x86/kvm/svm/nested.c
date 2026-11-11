@@ -292,10 +292,15 @@ static bool nested_vmcb_check_cr3_cr4(struct kvm_vcpu *vcpu,
 	return true;
 }
 
-/* Common checks that apply to both L1 and L2 state.  */
-static bool nested_vmcb_valid_sregs(struct kvm_vcpu *vcpu,
-				    struct vmcb_save_area *save)
+bool nested_vmcb_valid_sregs(struct kvm_vcpu *vcpu,
+			     struct vmcb_save_area *save, bool is_l1)
 {
+	if (is_l1 && (!(save->cr0 & X86_CR0_PG) ||
+		      !(save->cr0 & X86_CR0_PE) ||
+		      (save->rflags & X86_EFLAGS_VM) ||
+		      ((save->efer & EFER_LMA) && !(save->efer & EFER_LME))))
+		return false;
+
 	/*
 	 * FIXME: these should be done after copying the fields,
 	 * to avoid TOC/TOU races.  For these save area checks
@@ -674,7 +679,7 @@ int nested_svm_vmrun(struct kvm_vcpu *vcpu)
 
 	nested_load_control_from_vmcb12(svm, &vmcb12->control);
 
-	if (!nested_vmcb_valid_sregs(vcpu, &vmcb12->save) ||
+	if (!nested_vmcb_valid_sregs(vcpu, &vmcb12->save, false) ||
 	    !nested_vmcb_check_controls(vcpu, &svm->nested.ctl)) {
 		vmcb12->control.exit_code    = SVM_EXIT_ERR;
 		vmcb12->control.exit_code_hi = -1u;
@@ -1365,11 +1370,7 @@ static int svm_set_nested_state(struct kvm_vcpu *vcpu,
 	 * Validate host state saved from before VMRUN (see
 	 * nested_svm_check_permissions).
 	 */
-	if (!(save->cr0 & X86_CR0_PG) ||
-	    !(save->cr0 & X86_CR0_PE) ||
-	    (save->rflags & X86_EFLAGS_VM) ||
-	    ((save->efer & EFER_LMA) && !(save->efer & EFER_LME)) ||
-	    !nested_vmcb_valid_sregs(vcpu, save))
+	if (!nested_vmcb_valid_sregs(vcpu, save, true))
 		goto out_free;
 
 

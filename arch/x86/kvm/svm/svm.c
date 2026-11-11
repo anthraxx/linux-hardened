@@ -4441,6 +4441,8 @@ static int svm_leave_smm(struct kvm_vcpu *vcpu, const char *smstate)
 	 */
 
 	svm_copy_vmrun_state(&svm->vmcb01.ptr->save, map_save.hva + 0x400);
+	if (!nested_vmcb_valid_sregs(vcpu, &svm->vmcb01.ptr->save, true))
+		goto unmap_save;
 
 	/*
 	 * Enter the nested guest now
