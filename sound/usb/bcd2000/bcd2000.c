@@ -43,6 +43,7 @@ struct bcd2000 {
 	struct usb_interface *intf;
 	int card_index;
 
+	spinlock_t midi_lock;
 	int midi_out_active;
 	struct snd_rawmidi *rmidi;
 	struct snd_rawmidi_substream *midi_receive_substream;
@@ -90,7 +91,11 @@ static void bcd2000_midi_input_trigger(struct snd_rawmidi_substream *substream,
 						int up)
 {
 	struct bcd2000 *bcd2k = substream->rmidi->private_data;
+	unsigned long flags;
+
+	spin_lock_irqsave(&bcd2k->midi_lock, flags);
 	bcd2k->midi_receive_substream = up ? substream : NULL;
+	spin_unlock_irqrestore(&bcd2k->midi_lock, flags);
 }
 
 static void bcd2000_midi_handle_input(struct bcd2000 *bcd2k,
@@ -194,6 +199,9 @@ static void bcd2000_midi_output_trigger(struct snd_rawmidi_substream *substream,
 						int up)
 {
 	struct bcd2000 *bcd2k = substream->rmidi->private_data;
+	unsigned long flags;
+
+	spin_lock_irqsave(&bcd2k->midi_lock, flags);
 
 	if (up) {
 		bcd2k->midi_out_substream = substream;
@@ -203,11 +211,14 @@ static void bcd2000_midi_output_trigger(struct snd_rawmidi_substream *substream,
 	} else {
 		bcd2k->midi_out_substream = NULL;
 	}
+
+	spin_unlock_irqrestore(&bcd2k->midi_lock, flags);
 }
 
 static void bcd2000_output_complete(struct urb *urb)
 {
 	struct bcd2000 *bcd2k = urb->context;
+	unsigned long flags;
 
 	bcd2k->midi_out_active = 0;
 
@@ -219,12 +230,15 @@ static void bcd2000_output_complete(struct urb *urb)
 		return;
 
 	/* check if there is more data userspace wants to send */
+	spin_lock_irqsave(&bcd2k->midi_lock, flags);
 	bcd2000_midi_send(bcd2k);
+	spin_unlock_irqrestore(&bcd2k->midi_lock, flags);
 }
 
 static void bcd2000_input_complete(struct urb *urb)
 {
 	int ret;
+	unsigned long flags;
 	struct bcd2000 *bcd2k = urb->context;
 
 	if (urb->status)
@@ -233,6 +247,8 @@ static void bcd2000_input_complete(struct urb *urb)
 
 	if (!bcd2k || urb->status == -ESHUTDOWN)
 		return;
+
+	spin_lock_irqsave(&bcd2k->midi_lock, flags);
 
 	if (urb->actual_length > 0)
 		bcd2000_midi_handle_input(bcd2k, urb->transfer_buffer,
@@ -244,6 +260,8 @@ static void bcd2000_input_complete(struct urb *urb)
 		dev_err(&bcd2k->dev->dev, PREFIX
 			"%s: usb_submit_urb() failed, ret=%d\n",
 			__func__, ret);
+
+	spin_unlock_irqrestore(&bcd2k->midi_lock, flags);
 }
 
 static const struct snd_rawmidi_ops bcd2000_midi_output = {
@@ -348,16 +366,28 @@ static int bcd2000_init_midi(struct bcd2000 *bcd2k)
 	return 0;
 }
 
+static void bcd2000_midi_free(struct bcd2000 *bcd2k,
+			      struct urb **urb_p)
+{
+	struct urb *urb = *urb_p;
+	unsigned long flags;
+
+	if (!urb)
+		return;
+
+	usb_poison_urb(urb);
+	spin_lock_irqsave(&bcd2k->midi_lock, flags);
+	*urb_p = NULL;
+	spin_unlock_irqrestore(&bcd2k->midi_lock, flags);
+
+	usb_free_urb(urb);
+}
+
 static void bcd2000_free_usb_related_resources(struct bcd2000 *bcd2k,
 						struct usb_interface *interface)
 {
-	usb_poison_urb(bcd2k->midi_out_urb);
-	usb_poison_urb(bcd2k->midi_in_urb);
-
-	usb_free_urb(bcd2k->midi_out_urb);
-	usb_free_urb(bcd2k->midi_in_urb);
-	bcd2k->midi_out_urb = NULL;
-	bcd2k->midi_in_urb = NULL;
+	bcd2000_midi_free(bcd2k, &bcd2k->midi_out_urb);
+	bcd2000_midi_free(bcd2k, &bcd2k->midi_in_urb);
 
 	if (bcd2k->intf) {
 		usb_set_intfdata(bcd2k->intf, NULL);
@@ -397,6 +427,7 @@ static int bcd2000_probe(struct usb_interface *interface,
 	bcd2k->card = card;
 	bcd2k->card_index = card_index;
 	bcd2k->intf = interface;
+	spin_lock_init(&bcd2k->midi_lock);
 
 	snd_card_set_dev(card, &interface->dev);
 
