@@ -2157,8 +2157,7 @@ static void blkfront_closing(struct blkfront_info *info)
 		return;
 
 	/* No more blkif_request(). */
-	if (info->rq && info->gd) {
-		blk_mq_stop_hw_queues(info->rq);
+	if (info->gd) {
 		blk_mark_disk_dead(info->gd);
 		set_capacity(info->gd, 0);
 	}
