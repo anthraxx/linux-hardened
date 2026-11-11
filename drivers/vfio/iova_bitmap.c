@@ -113,6 +113,8 @@ struct iova_bitmap {
 
 	/* length of the IOVA range for the whole bitmap */
 	size_t length;
+
+	int err;
 };
 
 /*
@@ -381,11 +383,11 @@ int iova_bitmap_for_each(struct iova_bitmap *bitmap, void *opaque,
 	     ret = iova_bitmap_advance(bitmap)) {
 		ret = fn(bitmap, iova_bitmap_mapped_iova(bitmap),
 			 iova_bitmap_mapped_length(bitmap), opaque);
-		if (ret)
+		if (ret || bitmap->err)
 			break;
 	}
 
-	return ret;
+	return ret ? ret : bitmap->err;
 }
 
 /**
@@ -407,6 +409,18 @@ void iova_bitmap_set(struct iova_bitmap *bitmap,
 	unsigned long last_bit = (((iova + length - 1) - mapped->iova) >>
 			mapped->pgshift) + mapped->pgoff * BITS_PER_BYTE;
 	unsigned long last_page_idx = mapped->npages - 1;
+
+	/*
+	 * If the range cannot be recorded then the system call returns failure.
+	 * This is to prevent loosing dirties if userspace is expecting to step
+	 * the bitmap through the IOVA space.
+	 */
+	if (!length || length > bitmap->length || iova < bitmap->iova ||
+	    iova - bitmap->iova > bitmap->length - length) {
+		if (!bitmap->err)
+			bitmap->err = -EPROTO;
+		return;
+	}
 
 	do {
 		unsigned int page_idx = cur_bit / BITS_PER_PAGE;
