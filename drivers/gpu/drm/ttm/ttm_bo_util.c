@@ -312,6 +312,10 @@ static int ttm_bo_kmap_ttm(struct ttm_buffer_object *bo,
 	if (ret)
 		return ret;
 
+	/* Imported sg tables only come with DMA addresses, no pages to map. */
+	if (!ttm->pages)
+		return -EINVAL;
+
 	if (num_pages == 1 && ttm->caching == ttm_cached) {
 		/*
 		 * We're mapping a single page, and the desired
@@ -428,6 +432,9 @@ int ttm_bo_vmap(struct ttm_buffer_object *bo, struct dma_buf_map *map)
 		ret = ttm_tt_populate(bo->bdev, ttm, &ctx);
 		if (ret)
 			return ret;
+
+		if (!ttm->pages)
+			return -EINVAL;
 
 		/*
 		 * We need to use vmap to get the desired page protection
