@@ -2761,6 +2761,8 @@ free_irqs:
 			      host->ports[i]);
 	}
 
+	ata_host_undo_start(host);
+
 	return rc;
 }
 
