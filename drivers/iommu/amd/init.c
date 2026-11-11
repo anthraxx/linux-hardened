@@ -21,6 +21,7 @@
 #include <linux/kmemleak.h>
 #include <linux/mem_encrypt.h>
 #include <linux/iopoll.h>
+#include <linux/sizes.h>
 #include <asm/pci-direct.h>
 #include <asm/iommu.h>
 #include <asm/apic.h>
@@ -2665,6 +2666,21 @@ static void __init ivinfo_init(void *ivrs)
 }
 
 /*
+ * Apply workaround for Zen1 to Zen5(BRH) generation of processors.
+ * References: CVE-2024-21963
+ */
+static bool __init amd_iommu_force_max_dev_table(void)
+{
+	if (boot_cpu_data.x86 >= 0x17 && boot_cpu_data.x86 <= 0x1a) {
+		if (cpu_feature_enabled(X86_FEATURE_ZEN6))
+			return false;
+		else
+			return true;
+	}
+	return false;
+}
+
+/*
  * This is the hardware init function for AMD IOMMU in the system.
  * This function is called either from amd_iommu_init or from the interrupt
  * remapping setup code.
@@ -2732,7 +2748,12 @@ static int __init early_amd_iommu_init(void)
 	if (ret)
 		goto out;
 
-	dev_table_size     = tbl_size(DEV_TABLE_ENTRY_SIZE);
+	if (amd_iommu_force_max_dev_table()) {
+		pr_info("Force device table to maximum size\n");
+		dev_table_size = SZ_2M;
+	} else {
+		dev_table_size = tbl_size(DEV_TABLE_ENTRY_SIZE);
+	}
 	alias_table_size   = tbl_size(ALIAS_TABLE_ENTRY_SIZE);
 	rlookup_table_size = tbl_size(RLOOKUP_TABLE_ENTRY_SIZE);
 
