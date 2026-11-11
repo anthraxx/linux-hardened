@@ -97,6 +97,7 @@ struct amdgpu_kfd_dev {
 	struct kfd_dev *dev;
 	int64_t vram_used;
 	uint64_t vram_used_aligned;
+	atomic64_t vram_pinned;
 	bool init_complete;
 	struct work_struct reset_work;
 };
