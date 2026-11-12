@@ -175,12 +175,11 @@ xfs_trim_gather_extents(
 	cur = xfs_allocbt_init_cursor(mp, NULL, agbp, pag, XFS_BTNUM_CNT);
 
 	/*
-	 * Look up the extent length requested in the AGF and start with it.
+	 * A by-len walk starts at the last record of the longest
+	 * length (ar_startblock is NULLAGBLOCK until the first batch
+	 * ends) and then where the previous batch stopped.
 	 */
-	if (tcur->ar_startblock == NULLAGBLOCK)
-		error = xfs_alloc_lookup_ge(cur, 0, tcur->ar_blockcount, &i);
-	else
-		error = xfs_alloc_lookup_le(cur, tcur->ar_startblock,
+	error = xfs_alloc_lookup_le(cur, tcur->ar_startblock,
 				tcur->ar_blockcount, &i);
 	if (error)
 		goto out_del_cursor;
