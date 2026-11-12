@@ -1111,8 +1111,12 @@ SYSCALL_DEFINE5(mremap, unsigned long, addr, unsigned long, old_len,
 			 * expanding, so perform a simple expand for such vma.
 			 * Ideally the check for close op should be only done
 			 * when a vma would be actually removed due to a merge.
+			 *
+			 * Mixed mappings cannot be merged either, so they also
+			 * need to be expanded directly.
 			 */
-			if (!vma->vm_ops || !vma->vm_ops->close) {
+			if (!(vma->vm_flags & VM_MIXEDMAP) &&
+			    (!vma->vm_ops || !vma->vm_ops->close)) {
 				vma = vma_merge(mm, vma, extension_start, extension_end,
 					vma->vm_flags, vma->anon_vma, vma->vm_file,
 					extension_pgoff, vma_policy(vma),
