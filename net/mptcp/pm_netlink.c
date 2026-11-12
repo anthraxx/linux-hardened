@@ -1261,6 +1261,7 @@ static int mptcp_pm_nl_create_listen_socket(struct sock *sk,
 	}
 
 	inet_sk_state_store(newsk, TCP_LISTEN);
+	sock_set_flag(newsk, SOCK_RCU_FREE);
 	WRITE_ONCE(mptcp_subflow_ctx(ssock->sk)->pm_listener, true);
 	err = kernel_listen(ssock, backlog);
 	if (err) {
