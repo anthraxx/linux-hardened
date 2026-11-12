@@ -502,7 +502,7 @@ struct file *ovl_path_open(struct path *path, int flags)
 	struct inode *inode = d_inode(path->dentry);
 	int err, acc_mode;
 
-	if (flags & ~(O_ACCMODE | O_LARGEFILE))
+	if (flags & ~(O_ACCMODE | O_LARGEFILE | __FMODE_NONOTIFY))
 		BUG();
 
 	switch (flags & O_ACCMODE) {
