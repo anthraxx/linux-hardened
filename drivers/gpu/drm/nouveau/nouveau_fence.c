@@ -106,6 +106,12 @@ nouveau_fence_context_del(struct nouveau_fence_chan *fctx)
 	cancel_work_sync(&fctx->uevent_work);
 	nouveau_fence_context_kill(fctx, 0);
 	nvif_event_dtor(&fctx->event);
+	/*
+	 * The event handler can re-queue uevent_work after the drain above.
+	 * nvif_event_dtor() has waited out any running handler and no new
+	 * one can start, so drain once more before the context goes away.
+	 */
+	cancel_work_sync(&fctx->uevent_work);
 	fctx->dead = 1;
 
 	/*
