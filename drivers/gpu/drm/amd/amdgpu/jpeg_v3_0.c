@@ -151,11 +151,11 @@ static int jpeg_v3_0_hw_init(void *handle)
 
 	r = amdgpu_ring_test_helper(ring);
 	if (r)
-		return r;
+		cancel_delayed_work_sync(&adev->jpeg.idle_work);
+	else
+		DRM_INFO("JPEG decode initialized successfully.\n");
 
-	DRM_INFO("JPEG decode initialized successfully.\n");
-
-	return 0;
+	return r;
 }
 
 /**
