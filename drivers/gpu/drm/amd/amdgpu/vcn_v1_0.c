@@ -213,7 +213,9 @@ static int vcn_v1_0_hw_init(void *handle)
 		goto done;
 
 done:
-	if (!r)
+	if (r)
+		cancel_delayed_work_sync(&adev->vcn.idle_work);
+	else
 		DRM_INFO("VCN decode and encode initialized successfully(under %s).\n",
 			(adev->pg_flags & AMD_PG_SUPPORT_VCN_DPG)?"DPG Mode":"SPG Mode");
 
