@@ -214,10 +214,12 @@ static int vcn_v1_0_hw_init(void *handle)
 	ring = adev->jpeg.inst->ring_dec;
 	r = amdgpu_ring_test_helper(ring);
 	if (r)
-		goto done;
+		cancel_delayed_work_sync(&adev->jpeg.idle_work);
 
 done:
-	if (!r)
+	if (r)
+		cancel_delayed_work_sync(&adev->vcn.idle_work);
+	else
 		DRM_INFO("VCN decode and encode initialized successfully(under %s).\n",
 			(adev->pg_flags & AMD_PG_SUPPORT_VCN_DPG)?"DPG Mode":"SPG Mode");
 
