@@ -1133,10 +1133,21 @@ SYSCALL_DEFINE5(mremap, unsigned long, addr, unsigned long, old_len,
 			 * the next vma if it becomes adjacent to the expanded
 			 * vma and  otherwise compatible.
 			 */
-			vma = vma_merge(&vmi, mm, vma, extension_start,
-				extension_end, vma->vm_flags, vma->anon_vma,
-				vma->vm_file, extension_pgoff, vma_policy(vma),
-				vma->vm_userfaultfd_ctx, anon_vma_name(vma));
+			if (!(vma->vm_flags & (VM_PFNMAP | VM_DONTEXPAND |
+					      VM_MIXEDMAP))) {
+				vma = vma_merge(&vmi, mm, vma, extension_start,
+					extension_end, vma->vm_flags, vma->anon_vma,
+					vma->vm_file, extension_pgoff, vma_policy(vma),
+					vma->vm_userfaultfd_ctx, anon_vma_name(vma));
+			} else {
+				/* Mixed mappings are permitted to be expanded, not merged. */
+				VM_WARN_ON_ONCE(vma->vm_flags & (VM_PFNMAP | VM_DONTEXPAND));
+				VM_WARN_ON_ONCE(!(vma->vm_flags & VM_MIXEDMAP));
+				vma_prev(&vmi); /* Reposition to start of VMA. */
+				if (vma_expand(&vmi, vma, vma->vm_start,
+					       extension_end, vma->vm_pgoff, NULL))
+					vma = NULL;
+			}
 			if (!vma) {
 				vm_unacct_memory(pages);
 				ret = -ENOMEM;
