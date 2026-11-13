@@ -43,6 +43,7 @@
 
 #define D5NEXT_PUMP_CURRENT		112
 #define D5NEXT_FAN_CURRENT		99
+#define D5NEXT_MIN_STATUS_REPORT_SIZE	(D5NEXT_PUMP_SPEED + sizeof(u16))
 
 /* Labels for provided values */
 
@@ -86,6 +87,7 @@ struct d5next_data {
 	struct hid_device *hdev;
 	struct device *hwmon_dev;
 	struct dentry *debugfs;
+	u16 min_report_size;
 	s32 temp_input;
 	u16 speed_input[2];
 	u32 power_input[2];
@@ -189,6 +191,8 @@ static int d5next_raw_event(struct hid_device *hdev, struct hid_report *report, 
 		return 0;
 
 	priv = hid_get_drvdata(hdev);
+	if (!priv->min_report_size || size < priv->min_report_size)
+		return 0;
 
 	/* Info provided with every report */
 
@@ -297,6 +301,8 @@ static int d5next_probe(struct hid_device *hdev, const struct hid_device_id *id)
 	ret = hid_hw_open(hdev);
 	if (ret)
 		goto fail_and_stop;
+
+	priv->min_report_size = D5NEXT_MIN_STATUS_REPORT_SIZE;
 
 	priv->hwmon_dev = hwmon_device_register_with_info(&hdev->dev, "d5next", priv,
 							  &d5next_chip_info, NULL);
