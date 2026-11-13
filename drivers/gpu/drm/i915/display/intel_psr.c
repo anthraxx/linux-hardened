@@ -1807,7 +1807,7 @@ int intel_psr2_sel_fetch_update(struct intel_atomic_state *state,
 
 	if (!psr2_sel_fetch_pipe_state_supported(crtc_state)) {
 		full_update = true;
-		goto skip_sel_fetch_set_loop;
+		goto skip_su_area_calc;
 	}
 
 	/*
@@ -1893,13 +1893,17 @@ int intel_psr2_sel_fetch_update(struct intel_atomic_state *state,
 	}
 
 	if (full_update)
-		goto skip_sel_fetch_set_loop;
+		goto skip_su_area_calc;
 
 	ret = drm_atomic_add_affected_planes(&state->base, &crtc->base);
 	if (ret)
 		return ret;
 
 	intel_psr2_sel_fetch_pipe_alignment(crtc_state, &pipe_clip);
+
+skip_su_area_calc:
+	if (full_update)
+		clip_area_update(&pipe_clip, &display_area, &display_area);
 
 	/*
 	 * Now that we have the pipe damaged area check if it intersect with
@@ -1947,7 +1951,6 @@ int intel_psr2_sel_fetch_update(struct intel_atomic_state *state,
 		}
 	}
 
-skip_sel_fetch_set_loop:
 	psr2_man_trk_ctl_calc(crtc_state, &pipe_clip, full_update);
 	return 0;
 }
