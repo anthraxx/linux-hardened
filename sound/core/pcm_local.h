@@ -73,4 +73,10 @@ void snd_pcm_sync_stop(struct snd_pcm_substream *substream, bool sync_irq);
 		for ((subs) = (pcm)->streams[str].substream; (subs); \
 		     (subs) = (subs)->next)
 
+#if IS_ENABLED(CONFIG_SND_PCM_OSS)
+#define is_oss_stream(substream)	((substream)->oss.oss)
+#else
+#define is_oss_stream(substream)	false
+#endif
+
 #endif	/* __SOUND_CORE_PCM_LOCAL_H */
