@@ -266,6 +266,8 @@ struct o2hb_region {
 	/* Message key for negotiate timeout message. */
 	unsigned int		hr_key;
 	struct list_head	hr_handler_list;
+	/* Serializes the dev, block_bytes, start_block and blocks attributes. */
+	struct mutex		hr_dev_mutex;
 
 	/* last hb status, 0 for success, other value for error. */
 	int			hr_last_hb_status;
@@ -1599,22 +1601,25 @@ static ssize_t o2hb_region_block_bytes_store(struct config_item *item,
 					     size_t count)
 {
 	struct o2hb_region *reg = to_o2hb_region(item);
-	int status;
+	ssize_t status = -EINVAL;
 	unsigned long block_bytes;
 	unsigned int block_bits;
 
+	mutex_lock(&reg->hr_dev_mutex);
 	if (reg->hr_bdev)
-		return -EINVAL;
+		goto out;
 
 	status = o2hb_read_block_input(reg, page, &block_bytes,
 				       &block_bits);
 	if (status)
-		return status;
+		goto out;
 
 	reg->hr_block_bytes = (unsigned int)block_bytes;
 	reg->hr_block_bits = block_bits;
-
-	return count;
+	status = count;
+out:
+	mutex_unlock(&reg->hr_dev_mutex);
+	return status;
 }
 
 static ssize_t o2hb_region_start_block_show(struct config_item *item,
@@ -1630,18 +1635,20 @@ static ssize_t o2hb_region_start_block_store(struct config_item *item,
 	struct o2hb_region *reg = to_o2hb_region(item);
 	unsigned long long tmp;
 	char *p = (char *)page;
-	ssize_t ret;
+	ssize_t ret = -EINVAL;
 
+	mutex_lock(&reg->hr_dev_mutex);
 	if (reg->hr_bdev)
-		return -EINVAL;
+		goto out;
 
-	ret = kstrtoull(p, 0, &tmp);
-	if (ret)
-		return -EINVAL;
+	if (kstrtoull(p, 0, &tmp))
+		goto out;
 
 	reg->hr_start_block = tmp;
-
-	return count;
+	ret = count;
+out:
+	mutex_unlock(&reg->hr_dev_mutex);
+	return ret;
 }
 
 static ssize_t o2hb_region_blocks_show(struct config_item *item, char *page)
@@ -1656,28 +1663,37 @@ static ssize_t o2hb_region_blocks_store(struct config_item *item,
 	struct o2hb_region *reg = to_o2hb_region(item);
 	unsigned long tmp;
 	char *p = (char *)page;
+	ssize_t ret = -EINVAL;
 
+	mutex_lock(&reg->hr_dev_mutex);
 	if (reg->hr_bdev)
-		return -EINVAL;
+		goto out;
 
 	tmp = simple_strtoul(p, &p, 0);
 	if (!p || (*p && (*p != '\n')))
-		return -EINVAL;
+		goto out;
 
-	if (tmp > O2NM_MAX_NODES || tmp == 0)
-		return -ERANGE;
+	if (tmp > O2NM_MAX_NODES || tmp == 0) {
+		ret = -ERANGE;
+		goto out;
+	}
 
 	reg->hr_blocks = (unsigned int)tmp;
-
-	return count;
+	ret = count;
+out:
+	mutex_unlock(&reg->hr_dev_mutex);
+	return ret;
 }
 
 static ssize_t o2hb_region_dev_show(struct config_item *item, char *page)
 {
+	struct o2hb_region *reg = to_o2hb_region(item);
 	unsigned int ret = 0;
 
-	if (to_o2hb_region(item)->hr_bdev)
-		ret = sprintf(page, "%s\n", to_o2hb_region(item)->hr_dev_name);
+	mutex_lock(&reg->hr_dev_mutex);
+	if (reg->hr_bdev)
+		ret = sprintf(page, "%s\n", reg->hr_dev_name);
+	mutex_unlock(&reg->hr_dev_mutex);
 
 	return ret;
 }
@@ -1800,6 +1816,7 @@ static ssize_t o2hb_region_dev_store(struct config_item *item,
 	ssize_t ret = -EINVAL;
 	int live_threshold;
 
+	mutex_lock(&reg->hr_dev_mutex);
 	if (reg->hr_bdev)
 		goto out;
 
@@ -1900,9 +1917,15 @@ static ssize_t o2hb_region_dev_store(struct config_item *item,
 	reg->hr_task = hb_task;
 	spin_unlock(&o2hb_live_lock);
 
+	/*
+	 * Don't hold hr_dev_mutex across the wait, which can take seconds.
+	 * hr_bdev is already set, so other writers still get -EINVAL.
+	 */
+	mutex_unlock(&reg->hr_dev_mutex);
 	ret = wait_event_interruptible(o2hb_steady_queue,
 				atomic_read(&reg->hr_steady_iterations) == 0 ||
 				reg->hr_node_deleted);
+	mutex_lock(&reg->hr_dev_mutex);
 	if (ret) {
 		atomic_set(&reg->hr_steady_iterations, 0);
 		reg->hr_aborted_start = 1;
@@ -1942,6 +1965,7 @@ out3:
 out2:
 	fdput(f);
 out:
+	mutex_unlock(&reg->hr_dev_mutex);
 	return ret;
 }
 
@@ -2045,6 +2069,7 @@ static struct config_item *o2hb_heartbeat_group_make_item(struct config_group *g
 	}
 
 	INIT_LIST_HEAD(&reg->hr_all_item);
+	mutex_init(&reg->hr_dev_mutex);
 	INIT_LIST_HEAD(&reg->hr_handler_list);
 	config_item_init_type_name(&reg->hr_item, name, &o2hb_region_type);
 	if (!config_item_name(&reg->hr_item)) {
