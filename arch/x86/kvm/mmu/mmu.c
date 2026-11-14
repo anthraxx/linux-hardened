@@ -2029,6 +2029,9 @@ static struct kvm_mmu_page *kvm_mmu_get_page(struct kvm_vcpu *vcpu,
 	struct hlist_head *sp_list;
 	unsigned quadrant;
 	struct kvm_mmu_page *sp;
+	struct rmap_iterator iter;
+	u64 *sptep;
+	unsigned int parent_count;
 	bool need_sync = false;
 	bool flush = false;
 	int collisions = 0;
@@ -2058,6 +2061,21 @@ static struct kvm_mmu_page *kvm_mmu_get_page(struct kvm_vcpu *vcpu,
 
 		if (sp->role.word != role.word)
 			continue;
+
+		/*
+		 * Note!  Unlike fully direct MMUs, direct SPs in indirect MMUs
+		 * can have an arbitrary number of parents, e.g if the guest is
+		 * mapping a huge PTE at many points in its page tables.
+		 */
+		parent_count = 0;
+		for_each_rmap_spte(&sp->parent_ptes, &iter, sptep) {
+			if (++parent_count >= RMAP_RECYCLE_THRESHOLD)
+				break;
+		}
+		if (parent_count >= RMAP_RECYCLE_THRESHOLD) {
+			kvm_mmu_prepare_zap_page(vcpu->kvm, sp, &invalid_list);
+			break;
+		}
 
 		if (direct_mmu)
 			goto trace_get_page;
