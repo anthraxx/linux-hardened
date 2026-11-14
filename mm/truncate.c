@@ -594,6 +594,9 @@ EXPORT_SYMBOL(invalidate_mapping_pages);
 static int invalidate_complete_folio2(struct address_space *mapping,
 					struct folio *folio)
 {
+	void (*free_folio)(struct folio *folio);
+	int refs = 1;
+
 	if (folio->mapping != mapping)
 		return 0;
 
@@ -610,9 +613,14 @@ static int invalidate_complete_folio2(struct address_space *mapping,
 	xa_unlock_irq(&mapping->i_pages);
 	if (mapping_shrinkable(mapping))
 		inode_add_lru(mapping->host);
+	free_folio = mapping->a_ops->free_folio;
 	spin_unlock(&mapping->host->i_lock);
 
-	filemap_free_folio(mapping, folio);
+	if (free_folio)
+		free_folio(folio);
+	if (folio_test_large(folio) && !folio_test_hugetlb(folio))
+		refs = folio_nr_pages(folio);
+	folio_put_refs(folio, refs);
 	return 1;
 failed:
 	xa_unlock_irq(&mapping->i_pages);
