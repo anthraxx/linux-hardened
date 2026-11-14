@@ -284,6 +284,8 @@ int load_other_segments(struct kimage *image,
 			vfree(headers);
 			goto out_err;
 		}
+
+		vfree(image->arch.elf_headers);
 		image->arch.elf_headers = headers;
 		image->arch.elf_headers_mem = kbuf.mem;
 		image->arch.elf_headers_sz = headers_sz;
