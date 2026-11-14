@@ -232,23 +232,6 @@ void __delete_from_page_cache(struct page *page, void *shadow)
 	page_cache_delete(mapping, page, shadow);
 }
 
-static void page_cache_free_page(struct address_space *mapping,
-				struct page *page)
-{
-	void (*freepage)(struct page *);
-
-	freepage = mapping->a_ops->freepage;
-	if (freepage)
-		freepage(page);
-
-	if (PageTransHuge(page) && !PageHuge(page)) {
-		page_ref_sub(page, thp_nr_pages(page));
-		VM_BUG_ON_PAGE(page_count(page) <= 0, page);
-	} else {
-		put_page(page);
-	}
-}
-
 /**
  * delete_from_page_cache - delete page from page cache
  * @page: the page which the kernel is trying to remove from page cache
@@ -260,13 +243,22 @@ static void page_cache_free_page(struct address_space *mapping,
 void delete_from_page_cache(struct page *page)
 {
 	struct address_space *mapping = page_mapping(page);
+	void (*freepage)(struct page *page);
 
 	BUG_ON(!PageLocked(page));
 	xa_lock_irq(&mapping->i_pages);
 	__delete_from_page_cache(page, NULL);
+	freepage = mapping->a_ops->freepage;
 	xa_unlock_irq(&mapping->i_pages);
 
-	page_cache_free_page(mapping, page);
+	if (freepage)
+		freepage(page);
+	if (PageTransHuge(page) && !PageHuge(page)) {
+		page_ref_sub(page, thp_nr_pages(page));
+		VM_BUG_ON_PAGE(page_count(page) <= 0, page);
+	} else {
+		put_page(page);
+	}
 }
 EXPORT_SYMBOL(delete_from_page_cache);
 
@@ -335,6 +327,7 @@ static void page_cache_delete_batch(struct address_space *mapping,
 void delete_from_page_cache_batch(struct address_space *mapping,
 				  struct pagevec *pvec)
 {
+	void (*freepage)(struct page *page);
 	int i;
 
 	if (!pagevec_count(pvec))
@@ -347,10 +340,21 @@ void delete_from_page_cache_batch(struct address_space *mapping,
 		unaccount_page_cache_page(mapping, pvec->pages[i]);
 	}
 	page_cache_delete_batch(mapping, pvec);
+	freepage = mapping->a_ops->freepage;
 	xa_unlock_irq(&mapping->i_pages);
 
-	for (i = 0; i < pagevec_count(pvec); i++)
-		page_cache_free_page(mapping, pvec->pages[i]);
+	for (i = 0; i < pagevec_count(pvec); i++) {
+		struct page *page = pvec->pages[i];
+
+		if (freepage)
+			freepage(page);
+		if (PageTransHuge(page) && !PageHuge(page)) {
+			page_ref_sub(page, thp_nr_pages(page));
+			VM_BUG_ON_PAGE(page_count(page) <= 0, page);
+		} else {
+			put_page(page);
+		}
+	}
 }
 
 int filemap_check_errors(struct address_space *mapping)
