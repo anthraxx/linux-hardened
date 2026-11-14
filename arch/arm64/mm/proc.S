@@ -102,6 +102,10 @@ SYM_FUNC_START(cpu_do_suspend)
 	 * call stack.
 	 */
 	str	x18, [x0, #96]
+alternative_if ARM64_SME
+	mrs_s	x2, SYS_TPIDR2_EL0
+	str	x2, [x0, #104]
+alternative_else_nop_endif
 	ret
 SYM_FUNC_END(cpu_do_suspend)
 
@@ -145,6 +149,10 @@ SYM_FUNC_START(cpu_do_resume)
 	 */
 	disable_daif
 	msr	mdscr_el1, x10
+alternative_if ARM64_SME
+	ldr	x2, [x0, #104]
+	msr_s	SYS_TPIDR2_EL0, x2
+alternative_else_nop_endif
 
 	msr	sctlr_el1, x12
 	set_this_cpu_offset x13
