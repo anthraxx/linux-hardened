@@ -137,7 +137,7 @@ static int bsg_sg_io(struct request_queue *q, fmode_t mode, void __user *uarg)
 	struct request *rq;
 	struct bio *bio;
 	struct sg_io_v4 hdr;
-	int ret;
+	int ret, unmap_ret;
 
 	if (copy_from_user(&hdr, uarg, sizeof(hdr)))
 		return -EFAULT;
@@ -185,7 +185,9 @@ static int bsg_sg_io(struct request_queue *q, fmode_t mode, void __user *uarg)
 
 	blk_execute_rq(q, NULL, rq, !(hdr.flags & BSG_FLAG_Q_AT_TAIL));
 	ret = rq->q->bsg_dev.ops->complete_rq(rq, &hdr);
-	blk_rq_unmap_user(bio);
+	unmap_ret = blk_rq_unmap_user(bio);
+	if (!ret)
+		ret = unmap_ret;
 
 out_free_rq:
 	rq->q->bsg_dev.ops->free_rq(rq);
