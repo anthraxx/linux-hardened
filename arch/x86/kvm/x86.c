@@ -7720,10 +7720,12 @@ restart:
 	} else if (vcpu->arch.complete_userspace_io) {
 		writeback = false;
 		r = 0;
-	} else if (r == EMULATION_RESTART)
+	} else if (r == EMULATION_RESTART) {
+		cond_resched();
 		goto restart;
-	else
+	} else {
 		r = 1;
+	}
 
 	if (writeback) {
 		unsigned long rflags = kvm_x86_ops.get_rflags(vcpu);
