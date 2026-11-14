@@ -1409,7 +1409,8 @@ static int userfaultfd_register(struct userfaultfd_ctx *ctx,
 		 * userfaultfd and with the right tracking mode too.
 		 */
 		if (vma->vm_userfaultfd_ctx.ctx == ctx &&
-		    (vma->vm_flags & vm_flags) == vm_flags)
+		    (vma->vm_flags & (VM_UFFD_MISSING | VM_UFFD_WP)) ==
+		    vm_flags)
 			goto skip;
 
 		if (vma->vm_start > start)
