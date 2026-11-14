@@ -664,11 +664,12 @@ struct vm_area_struct {
 	 * Can be read unreliably (using READ_ONCE()) for pessimistic bailout
 	 * while holding nothing (except RCU to keep the VMA struct allocated).
 	 *
-	 * This sequence counter is explicitly allowed to overflow; sequence
-	 * counter reuse can only lead to occasional unnecessary use of the
-	 * slowpath.
+	 * This sequence counter must not be reused while a VMA still holds an
+	 * old value, as that VMA would then be spuriously considered write
+	 * locked and readers would not be excluded. It is therefore a long,
+	 * which on 64-bit will not overflow in practice.
 	 */
-	int vm_lock_seq;
+	long vm_lock_seq;
 	struct vma_lock *vm_lock;
 
 	/* Flag to indicate areas detached from the mm->mm_mt tree */
@@ -847,7 +848,7 @@ struct mm_struct {
 		 * Can be read with ACQUIRE semantics if not holding write
 		 * mmap_lock.
 		 */
-		int mm_lock_seq;
+		long mm_lock_seq;
 #endif
 #ifdef CONFIG_FUTEX
 		atomic64_t futex_unique_id;
