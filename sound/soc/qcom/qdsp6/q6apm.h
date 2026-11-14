@@ -149,4 +149,6 @@ bool q6apm_is_sub_graphs_connected(struct q6apm *apm, u32 src_sgid,
 				   u32 dst_sgid);
 int q6apm_graph_get_rx_shmem_module_iid(struct q6apm_graph *graph);
 
+bool q6apm_is_adsp_ready(void);
+
 #endif /* __APM_GRAPH_ */
