@@ -2043,7 +2043,7 @@ int intel_psr2_sel_fetch_update(struct intel_atomic_state *state,
 		.y2 = crtc_state->hw.adjusted_mode.crtc_vdisplay,
 	};
 	bool full_update = false;
-	int i, ret;
+	int i;
 
 	if (!crtc_state->enable_psr2_sel_fetch)
 		return 0;
@@ -2144,10 +2144,6 @@ int intel_psr2_sel_fetch_update(struct intel_atomic_state *state,
 	    crtc_state->splitter.enable)
 		pipe_clip.y1 = 0;
 
-	ret = drm_atomic_add_affected_planes(&state->base, &crtc->base);
-	if (ret)
-		return ret;
-
 	intel_psr2_sel_fetch_pipe_alignment(crtc_state, &pipe_clip);
 
 skip_su_area_calc:
@@ -2171,11 +2167,6 @@ skip_su_area_calc:
 		if (!drm_rect_intersect(&inter, &new_plane_state->uapi.dst))
 			continue;
 
-		if (!psr2_sel_fetch_plane_state_supported(new_plane_state)) {
-			full_update = true;
-			break;
-		}
-
 		sel_fetch_area = &new_plane_state->psr2_sel_fetch_area;
 		sel_fetch_area->y1 = inter.y1 - new_plane_state->uapi.dst.y1;
 		sel_fetch_area->y2 = inter.y2 - new_plane_state->uapi.dst.y1;
@@ -2189,9 +2180,9 @@ skip_su_area_calc:
 			struct intel_plane_state *linked_new_plane_state;
 			struct drm_rect *linked_sel_fetch_area;
 
-			linked_new_plane_state = intel_atomic_get_plane_state(state, linked);
-			if (IS_ERR(linked_new_plane_state))
-				return PTR_ERR(linked_new_plane_state);
+			linked_new_plane_state = intel_atomic_get_new_plane_state(state, linked);
+			if (!linked_new_plane_state)
+				return -EINVAL;
 
 			linked_sel_fetch_area = &linked_new_plane_state->psr2_sel_fetch_area;
 			linked_sel_fetch_area->y1 = sel_fetch_area->y1;
